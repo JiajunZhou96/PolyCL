@@ -104,6 +104,6 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             
             
     #model.save_model(path = config["save_path"])
-    #print("train_finished and model saved")
+    print("train_finished and model saved")
     
 train(model, dataloader1, dataloader2, device, optimizer, config["n_epochs"])
