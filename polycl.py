@@ -89,12 +89,16 @@ class polyCL(nn.Module):
             
         print('Path created.')
         
-        torch.save(self.state_dict(), path + '/polycl_model.pth')
+        # Check if the model was parallelized during training
+        if isinstance(self, torch.nn.DataParallel):
+        # If it was, save the original state_dict (from module) instead of the wrapped state_dict
+            torch.save(self.module.state_dict(), os.path.join(path, 'polycl_model.pth'))
+        else:
+            torch.save(self.state_dict(), os.path.join(path, 'polycl_model.pth'))
         
     def load_pretrained(self):
         
         pass
-
 
 import torch
 import numpy as np

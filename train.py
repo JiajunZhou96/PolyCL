@@ -59,7 +59,7 @@ optimizer = optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config
 def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
     model.train()
     
-    total_batches = len(dataloader1) * n_epochs # number of batches in one epoch * number of epochs
+    total_batches = len(dataloader1) * n_epochs # nuumber of batches in one epoch * number of epochs
     
     save_every = int(config["save_interval"] * total_batches)
     log_every = int(config["log_interval"] * total_batches)
@@ -68,7 +68,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
         epoch_loss = 0.0
         #start_time = time.time()
         
-        for i, batch in enumerate(tqdm(zip(dataloader1, dataloader2), desc= "Iteration", initial= 1)):
+        for i, batch in enumerate(tqdm(zip(dataloader1, dataloader2), desc= "Iteration", initial= 1)):  # initial= 1 will not affect the initial value of i 
 
             batch1, batch2 = batch
             
@@ -99,8 +99,8 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             
             if batches_done % save_every == 0:
                 
-                model.save_model(path = f"model_epoch{epoch+1}_batch{i+1}.pth",)
-                print(f"Model saved at Epoch [{epoch+1}], Batch [{i+1}]")
+                model.save_model(path = f"model/model_epoch{epoch}_batch{i+1}",)
+                print(f"Model saved at Epoch [{epoch}], Batch [{i+1}]")
             
             
     #model.save_model(path = config["save_path"])
