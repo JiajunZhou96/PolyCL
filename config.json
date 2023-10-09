@@ -19,9 +19,6 @@
 
     "n_epochs": 3,
 
-
-    "save_path": "/home/mmm1303/polycl/model/polycl_model.pt",
-
     "log_interval": 0.01,
     "model_save_interval": 0.2
 
