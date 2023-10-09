@@ -1,0 +1,30 @@
+{
+    "seed": 72,
+    "pretrain_data_txt": "./datasets/generated_polymer_smiles_train_500k.txt",
+
+    "aug_mode_1": "drop",
+    "aug_mode_2": "masking",
+
+    "temperature": 0.1,
+    "use_cosine_similarity": true,
+
+    "batch_size": 16,
+
+    "freeze_layers": 11,
+
+    "pooler": "cls", 
+
+    "lr": 5e-5,
+    "weight_decay": 0.01,
+
+    "n_epochs": 3,
+
+
+    "save_path": "/home/mmm1303/polycl/model/polycl_model.pt",
+
+    "log_interval": 0.01,
+    "model_save_interval": 0.2
+
+
+
+}
