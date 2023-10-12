@@ -112,7 +112,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             epoch_loss += loss.detach().cpu().item()
             align_loss_val = align_loss(out1, out2, alpha = config["align_alpha"])
             unif_loss_val = (uniform_loss(out1, t=config["uniformity_t"]) + uniform_loss(out2, t=config["uniformity_t"])) / 2
-            al_un_loss = loss = align_losis_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
+            al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
             batches_done = (epoch - 1) * len(dataloader1) + (i + 1)
 
             if batches_done == 1 or batches_done % log_every == 0:
