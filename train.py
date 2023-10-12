@@ -98,8 +98,8 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
 
             with autocast():
             
-                _, out1 = model(batch1)
-                _, out2 = model(batch2)
+                rep, out1 = model(batch1)
+                rep, out2 = model(batch2)
                 
                 out1 = nn.functional.normalize(out1, dim =1)
                 out2 = nn.functional.normalize(out2, dim =1)
