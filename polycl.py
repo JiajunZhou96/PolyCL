@@ -39,29 +39,7 @@ def first_last_pooling(model_output, attention_mask):
     
     return pooled_result
 
-'''
-def NTXentloss(x1, x2):
-    T = config["temperature"]
-    batch_size, _ = x1.size()
-    
-    # batch_size *= 2
-    # x1, x2 = torch.cat((x1, x2), dim=0), torch.cat((x2, x1), dim=0)
-
-    x1_abs = x1.norm(dim=1)
-    x2_abs = x2.norm(dim=1)
-    
-    sim_matrix = torch.einsum('ik,jk->ij', x1, x2) / torch.einsum('i,j->ij', x1_abs, x2_abs)  #cosine similarity
-    sim_matrix = torch.exp(sim_matrix / T)
-    pos_sim = sim_matrix[range(batch_size), range(batch_size)]
-    loss = pos_sim / (sim_matrix.sum(dim=1) - pos_sim)
-    loss = - torch.log(loss).mean()
-    
-    return loss
-'''
-
-
 # contrastive learning based on polyCL
-#from polycl import *
 class polyCL(nn.Module):
 
     def __init__(self, encoder, pooler):
@@ -118,61 +96,6 @@ class polyCL(nn.Module):
         
         pass
         
-'''
-class polyCL2(nn.Module):
-
-    def __init__(self, encoder, pooler):
-        super(polyCL2, self).__init__()
-        self.encoder = encoder
-        self.pooler = pooler
-        self.projection_head = nn.Sequential(nn.Linear(600, 256),   # 这里第一个向量应该是 embedding size
-                                            nn.ReLU(inplace=True), 
-                                            nn.Linear(256, 128))
-
-    def forward(self, data):  # dataloader
-        
-        ## if self.pooler: # or "mean" or " max"
-        data1, data2 = data
-        model_output1 = self.encoder(input_ids = data1["input_ids"], attention_mask = data1["attention_mask"], token_type_ids = data1["token_type_ids"])
-        model_output2 = self.encoder(input_ids = data2["input_ids"], attention_mask = data2["attention_mask"], token_type_ids = data2["token_type_ids"])
-        
-        if self.pooler == "mean":
-            rep1 = mean_pooling(model_output1, model_output1['attention_mask'])
-            rep2 = mean_pooling(model_output2, model_output2['attention_mask'])
-        
-        elif self.pooler == "cls":
-            rep1 = cls_pooling(model_output1)
-            rep2 = cls_pooling(model_output2)
-        
-        elif self.pooler == "first_last":
-            rep1 = first_last_pooling(model_output1, model_output1['attention_mask'])
-            rep2 = first_last_pooling(model_output2, model_output2['attention_mask'])
-        
-        out1 = self.projection_head(rep1)
-        out2 = self.projection_head(rep2)
-        
-        loss = NTXentloss(out1, out2)
-        
-        return loss, (rep1, rep2), (out1, out2)
-    
-    def save_model(self, path = None):
-        
-        if path is None:
-            path = os.path.join(os.getcwd(), 'model')
-        else:
-            path = os.path.join(os.getcwd(), path)
-        
-        if os.path.exists(path) == True:
-            pass
-            print('Path already existed.')
-        else:
-            os.mkdir(path)
-            
-        print('Path created.')
-        
-        torch.save(self.state_dict(), path + '/polycl_model.pth')
-'''  
-
 
 import torch
 import numpy as np
