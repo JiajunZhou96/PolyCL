@@ -98,8 +98,8 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
 
             with autocast():
             
-                rep, out1 = model(batch1)
-                rep, out2 = model(batch2)
+                rep1, out1 = model(batch1)
+                rep2, out2 = model(batch2)
                 
                 out1 = nn.functional.normalize(out1, dim =1)
                 out2 = nn.functional.normalize(out2, dim =1)
@@ -110,14 +110,15 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             # if n_iter % 10 == 0:    
             #     print("train loss", loss.detach().cpu().item())
             epoch_loss += loss.detach().cpu().item()
-            align_loss_val = align_loss(out1, out2, alpha = config["align_alpha"])
-            unif_loss_val = (uniform_loss(out1, t=config["uniformity_t"]) + uniform_loss(out2, t=config["uniformity_t"])) / 2
-            al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
+            align_loss_val = align_loss(rep1, rep2, alpha = config["align_alpha"])
+            unif_loss_val = (uniform_loss(rep1, t=config["uniformity_t"]) + uniform_loss(rep2, t=config["uniformity_t"])) / 2
+            #al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
             batches_done = (epoch - 1) * len(dataloader1) + (i + 1)
 
             if batches_done == 1 or batches_done % log_every == 0:
                 avg_loss = epoch_loss / (i + 1)
-                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .6f}, Unif_Loss: {unif_loss_val: .6f}, Al_un_loss: {al_un_loss: .6f}")
+                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}}")
+                #print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}, Al_un_loss: {al_un_loss: .4f}")
 
             #n_iter += 1
             #loss.backward()
