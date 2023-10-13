@@ -112,7 +112,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             epoch_loss += loss.detach().cpu().item()
             batches_done = (epoch - 1) * len(dataloader1) + (i + 1)
 
-            if batches_done == list(range(1, 20)) or batches_done % log_every == 0:
+            if batches_done == list(range(1, log_every, 5)) or batches_done % log_every == 0: # 一开始记录频繁一点
                 
                 avg_loss = epoch_loss / (i + 1)
 
@@ -123,7 +123,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
                 unif_loss_val = (uniform_loss(rep1_norm, t=config["uniformity_t"]) + uniform_loss(rep2_norm, t=config["uniformity_t"])) / 2
                 #al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
                 
-                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}}")
+                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}")
                 #print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}, Al_un_loss: {al_un_loss: .4f}")
 
             #n_iter += 1
