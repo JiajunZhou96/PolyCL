@@ -40,6 +40,7 @@ def first_last_pooling(model_output, attention_mask):
     return pooled_result
 
 # contrastive learning based on polyCL
+#from polycl import *
 class polyCL(nn.Module):
 
     def __init__(self, encoder, pooler):
@@ -90,12 +91,12 @@ class polyCL(nn.Module):
             
         print('Path created.')
         
-        torch.save(self.state_dict(), path + '/polycl_model.pth')
+        torch.save(self.state_dict(), path)
         
     def load_pretrained(self):
         
         pass
-        
+
 
 import torch
 import numpy as np
@@ -162,10 +163,18 @@ class NTXentLoss(torch.nn.Module):
         loss = self.criterion(logits, labels)
 
         return loss / (2 * self.batch_size)
-    
-def freeze_layers(model, layers_to_freeze = False):
 
-    #Freeze layers
+def set_dropout(config, dropout):
+    if dropout == True:  # initially attention_probs_dropout_prob and hidden_dropout_prob are 0.1
+        pass
+    elif dropout == False:
+        config.attention_probs_dropout_prob = 0.0
+        config.hidden_dropout_prob = 0.0  # 这一行本质上是下面的 attention output 和 output 的结合
+    
+    return config
+
+def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False):
+    
     if layers_to_freeze is False:
         pass
     
@@ -173,11 +182,25 @@ def freeze_layers(model, layers_to_freeze = False):
         for i in range(layers_to_freeze):
             for param in model.encoder.layer[i].parameters():
                 param.requires_grad = False
+            
+                if freeze_layer_dropout is False:
+                    model.encoder.layer[i].attention.self.dropout.p = 0.0
+                    model.encoder.layer[i].attention.output.dropout.p = 0.0
+                    model.encoder.layer[i].output.dropout.p = 0.0
+                else:
+                    pass
 
     elif isinstance(layers_to_freeze, list):
         for idx in layers_to_freeze:
             for param in model.encoder.layer[idx].parameters():
                 param.requires_grad = False
+            
+                if freeze_layer_dropout is False:
+                    model.encoder.layer[idx].attention.self.dropout.p = 0.0
+                    model.encoder.layer[idx].attention.output.dropout.p = 0.0
+                    model.encoder.layer[idx].output.dropout.p = 0.0
+                else:
+                    pass
     
     else:
         raise ValueError("Input layers_to_freeze should be an int or a list of int.")

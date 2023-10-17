@@ -45,6 +45,7 @@ def set_seed(seed):
     # Enabling determinism in cuDNN backend
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+    
 
 def get_scheduler(config, optimizer):
     config = get_config(print_dict = False)
@@ -64,9 +65,17 @@ def get_scheduler(config, optimizer):
                                      step_size_up = scheduler_config["step_size"],
                                      **optional_params)
     elif scheduler_type == "LinearLR":
-        return lr_scheduler.LinearLR(optimizer,
-                                    start_factor = scheduler_config["start_factor"],
-                                    total_iters = scheduler_config["total_iters"],
+        #return lr_scheduler.LinearLR(optimizer,
+        #                            start_factor = scheduler_config["start_factor"],
+        #                            total_iters = scheduler_config["total_iters"],
+        #                            **optional_params)
+        return lr_scheduler.LambdaLR(optimizer,
+                                    lr_lambda = lambda ratio: 1.0 -  ratio, # ratio is current batch/ total batch
+                                    **optional_params)
+    elif scheduler_type == "ConstantLR":
+        
+        return lr_scheduler.LambdaLR(optimizer,
+                                    lr_lambda = lambda x: 1.0,
                                     **optional_params)
 
 '''https://github.com/ssnl/align_uniform/blob/master/examples/stl10/util.py'''
@@ -106,7 +115,7 @@ class AverageMeter(object):
             val = val.item()
         return self.fmtstr.format(val=val, avg=self.avg)
 
-def align_loss(x, y, alpha=2):
+def align_loss(x, y, alpha=2):  # input [batch size, latent dim], and x, y are 
     return (x - y).norm(p=2, dim=1).pow(alpha).mean()
 
 def uniform_loss(x, t=2):
