@@ -27,9 +27,8 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-pretrain_data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
-pretrain_data = pretrain_data[:500]
-psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
+data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
+psmile_data = [dataloader.to_psmiles(smiles) for smiles in data]
 pretrain_data = psmile_data
 
 # shuffle the list
@@ -68,7 +67,7 @@ scheduler = utils.get_scheduler(config, optimizer)
 scaler = GradScaler()
 
 # Create a TensorBoard summary writer
-writer = SummaryWriter(log_dir = f"model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
+writer = SummaryWriter(log_dir = f"log/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
                                             {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
                                             {config['n_epochs']}_{config['temperature']}")
 
