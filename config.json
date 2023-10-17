@@ -29,7 +29,7 @@
         "max_grad_norm": 1.0
     },
 
-    "n_epochs": 20,
+    "n_epochs": 5,
 
     "log_interval": 0.01,
     "model_save_interval": 0.2,
@@ -38,10 +38,6 @@
     "alignment_w": 1,
     "uniformity_w": 1,
     "uniformity_t": 2,
-
-
-    "save_path": "./model/polycl_model_test.pth"
-
 
 
 }
