@@ -164,8 +164,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
 
 
             if batches_done % save_every == 0:
-                model.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_
-                                                    {config['n_epochs']}_{config['temperature']}.pth")
+                model.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
                 
                 writer.add_text('intermediate_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth", batches_done)
                 print(f"Model saved at Epoch [{epoch-1}], Batch [{i+1}]")
