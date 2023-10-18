@@ -27,8 +27,7 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-pretrain_data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
-#pretrain_data = pretrain_data[:500]
+pretrain_data = utils.read_txt(config["pretrain_data_txt"])
 psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
 pretrain_data = psmile_data
 
