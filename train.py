@@ -27,8 +27,9 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
-psmile_data = [dataloader.to_psmiles(smiles) for smiles in data]
+pretrain_data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
+#pretrain_data = pretrain_data[:500]
+psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
 pretrain_data = psmile_data
 
 # shuffle the list
@@ -67,7 +68,7 @@ scheduler = utils.get_scheduler(config, optimizer)
 scaler = GradScaler()
 
 # Create a TensorBoard summary writer
-writer = SummaryWriter(log_dir = f"log/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
+writer = SummaryWriter(log_dir = f"model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
                                             {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
                                             {config['n_epochs']}_{config['temperature']}")
 
@@ -163,32 +164,15 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
 
 
             if batches_done % save_every == 0:
-                if isinstance(model, nn.DataParallel):        
-                    model.module.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                                    {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                                    {config['n_epochs']}_{config['temperature']}.pth")
-                else:
-                    model.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                                    {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
+                model.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_
                                                     {config['n_epochs']}_{config['temperature']}.pth")
                 
-                writer.add_text('intermediate_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                                    {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                                    {config['n_epochs']}_{config['temperature']}.pth", batches_done)
+                writer.add_text('intermediate_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth", batches_done)
                 print(f"Model saved at Epoch [{epoch-1}], Batch [{i+1}]")
                 
-    if isinstance(model, nn.DataParallel):        
-        model.module.save_model(path = f"model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                                    {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                                    {config['n_epochs']}_{config['temperature']}.pth")
-    else:
-        model.save_model(path = f"model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                                {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                                {config['n_epochs']}_{config['temperature']}.pth")
+    model.save_model(path = f"model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
     
-    writer.add_text('final_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                    {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                    {config['n_epochs']}_{config['temperature']}.pth", 0)
+    writer.add_text('final_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth", 0)
     print('train_finished and model_saved')
 
 

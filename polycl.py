@@ -91,7 +91,11 @@ class polyCL(nn.Module):
             
         print('Path created.')
         
-        torch.save(self.state_dict(), path)
+        if isinstance(self, nn.DataParallel):
+            torch.save(self.module.state_dict(), path)
+        else:
+            torch.save(self.state_dict(), path)
+        
         
     def load_pretrained(self):
         
