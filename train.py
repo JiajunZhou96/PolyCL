@@ -68,9 +68,7 @@ scheduler = utils.get_scheduler(config, optimizer)
 scaler = GradScaler()
 
 # Create a TensorBoard summary writer
-writer = SummaryWriter(log_dir = f"model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_\
-                                            {config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_\
-                                            {config['n_epochs']}_{config['temperature']}")
+writer = SummaryWriter(log_dir = f"model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}")
 
 # initiation of alignment and uniformity meters
 align_meter = AverageMeter('align_loss')
