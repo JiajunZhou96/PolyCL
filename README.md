@@ -7,8 +7,8 @@
 ## Requirements<br />
 
 ```
-$ conda create --name polyCL python=3.7.11
-$ conda activate polyCL
+$ conda create --name polycl python=3.9
+$ conda activate polycl
 # install requirements
 #$ pip install numpy==1.21.5
 #$ pip install pandas==1.3.3
