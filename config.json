@@ -1,6 +1,6 @@
 {
     "seed": 72,
-    "pretrain_data_txt": "./datasets/pretrain_1m.txt",
+    "pretrain_data": "./datasets/pretrain_1m.csv",
 
     "aug_mode_1": "original",
     "aug_mode_2": "original",
