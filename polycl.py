@@ -83,13 +83,10 @@ class polyCL(nn.Module):
         else:
             path = os.path.join(os.getcwd(), path)
         
-        if os.path.exists(path) == True:
-            pass
-            print('Path already existed.')
-        else:
-            os.mkdir(path)
-            
-        print('Path created.')
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+            print('directory created!')
         
         if isinstance(self, nn.DataParallel):
             torch.save(self.module.state_dict(), path)
