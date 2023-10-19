@@ -138,7 +138,7 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
                 
                 logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}")
                 logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Align Loss: {align_loss_val:.4f}, Unif_Loss: {unif_loss_val: .4f}")
-                logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, 'learning_rate_current_epoch', optimizer.param_groups[0]['lr']")
+                logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, learning_rate_current_epoch: {optimizer.param_groups[0]['lr']}")
                 #print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}, Al_un_loss: {al_un_loss: .4f}")
 
             # backward pass with gradient scaling
