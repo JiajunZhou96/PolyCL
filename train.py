@@ -1,4 +1,5 @@
 import os
+import logging
 import random
 import numpy as np
 import pandas as pd
@@ -12,7 +13,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 #from torch.optim.lr_scheduler import LinearLR
 from torch.cuda.amp import autocast, GradScaler # mixed precision training
-from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from utils import AverageMeter
@@ -27,7 +27,7 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-pretrain_data = utils.read_txt(config["pretrain_data"])
+pretrain_data = utils.read_csv(config["pretrain_data"])
 psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
 pretrain_data = psmile_data
 
@@ -66,22 +66,24 @@ scheduler = utils.get_scheduler(config, optimizer)
 # mixed precision
 scaler = GradScaler()
 
-# Create a TensorBoard summary writer
-writer = SummaryWriter(log_dir = f"model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}")
+# create a logger
+logging.basicConfig(filename=f"/home/mmm1303/PolyCL/model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}", 
+                    level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
 
 # initiation of alignment and uniformity meters
 align_meter = AverageMeter('align_loss')
 unif_meter = AverageMeter('uniform_loss')
 
-writer.add_text('Data Information', f"Number of training samples: {len(pretrain_data)}", 0)
-writer.add_text('Augmentations_1', f"{config['aug_mode_1']}", 0)
-writer.add_text('Augmentations_2', f"{config['aug_mode_2']}", 0)
-writer.add_text('model_dropout', f"{config['model_dropout']}", 0)
-writer.add_scalar('batch_size', config['batch_size'])
-writer.add_scalar('maximum learning rate', config['batch_size'])
-writer.add_text('learning rate scheduler',  f"{config['scheduler']['type']}", 0)
-writer.add_text('total number of epochs',  f"{config['n_epochs']}", 0)
-writer.add_text('NTXENT temperature',  f"{config['temperature']}", 0)
+logger.info(f"Number of training samples: {len(pretrain_data)}")
+logger.info(f"Augmentation Mode 1: {config['aug_mode_1']}")
+logger.info(f"Augmentation Mode 2: {config['aug_mode_2']}")
+logger.info(f"Model_Dropout: {config['model_dropout']}")
+logger.info(f"Batch_Size: {config['batch_size']}")
+logger.info(f"Maximum Learning_Rate: {config['lr']}")
+logger.info(f"Learning Rate Scheduler: {config['scheduler']['type']}")
+logger.info(f"Total Number of Epochs: {config['n_epochs']}")
+logger.info(f"NTXENT Temperature: {config['temperature']}")
 
 def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
     model.train()
@@ -133,10 +135,10 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
                 #al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
                 
                 print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}")
-                writer.add_scalar('training_loss', avg_loss, batches_done)
-                writer.add_scalar('alignment', align_loss_val, batches_done)
-                writer.add_scalar('uniformity', unif_loss_val, batches_done)
-                writer.add_scalar('learning_rate_current_epoch', optimizer.param_groups[0]['lr'], batches_done)
+                
+                logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}")
+                logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Align Loss: {align_loss_val:.4f}, Unif_Loss: {unif_loss_val: .4f}")
+                logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, 'learning_rate_current_epoch', optimizer.param_groups[0]['lr']")
                 #print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}, Al_un_loss: {al_un_loss: .4f}")
 
             # backward pass with gradient scaling
@@ -159,16 +161,15 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             else:
                 scheduler.step()
 
-
             if batches_done % save_every == 0:
-                model.save_model(path = f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
+                model.save_model(path = f"/home/mmm1303/PolyCL/model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
                 
-                writer.add_text('intermediate_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth", batches_done)
+                logger.info(f"Intermediate model saved at Epoch [{epoch-1}], Batch [{i+1}] with name: model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
                 print(f"Model saved at Epoch [{epoch-1}], Batch [{i+1}]")
                 
-    model.save_model(path = f"model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
+    model.save_model(path = f"/home/mmm1303/PolyCL/model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
     
-    writer.add_text('final_model_name', f"model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth", 0)
+    logger.info(f"Final model saved with name: model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
     print('train_finished and model_saved')
 
 
