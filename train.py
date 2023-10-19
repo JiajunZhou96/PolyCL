@@ -67,7 +67,7 @@ scheduler = utils.get_scheduler(config, optimizer)
 scaler = GradScaler()
 
 # create a logger
-logging.basicConfig(filename=f"/home/mmm1303/PolyCL/model/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}", 
+logging.basicConfig(filename=f"/home/mmm1303/PolyCL/log/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.log", 
                     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
