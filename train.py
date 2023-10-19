@@ -27,7 +27,7 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-pretrain_data = utils.read_csv(config["pretrain_data"])
+pretrain_data = utils.read_txt(config["pretrain_data"])
 psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
 pretrain_data = psmile_data
 
