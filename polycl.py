@@ -94,9 +94,15 @@ class polyCL(nn.Module):
             torch.save(self.state_dict(), path)
         
         
-    def load_pretrained(self):
+    def load_pretrained(self, pretrained = True, path = None):
         
-        pass
+        if pretrained:
+            if isinstance(self, nn.DataParallel):
+                self.module.load_state_dict(torch.load(path))
+            else:
+                self.load_state_dict(torch.load(path))
+        else:
+            pass
 
 
 import torch
