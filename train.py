@@ -50,13 +50,13 @@ polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config
 polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"], freeze_layer_dropout = False)
 model = polycl.polyCL(encoder= polyBERT, pooler = config["pooler"])
 
-# parallel
-if torch.cuda.device_count() > 1:
-    model = nn.DataParallel(model)
-
 # Move the model to GPUs 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+
+# parallel
+if torch.cuda.device_count() > 1:
+    model = nn.DataParallel(model)
 
 ntxent_loss = polycl.NTXentLoss(device = device, batch_size = config["batch_size"], temperature = config["temperature"], use_cosine_similarity = config["use_cosine_similarity"])
 
