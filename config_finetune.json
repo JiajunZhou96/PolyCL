@@ -1,0 +1,54 @@
+{
+    "seed": 72,
+    "pretrain_data_txt": "/home/mmm1248/Project/Polyinfo/PolyCL/datasets/pretrain_1M.csv",
+
+    "aug_mode_1": "original",
+    "aug_mode_2": "original",
+    "model_dropout": true,
+
+    "temperature": 0.05,
+    "use_cosine_similarity": true,
+
+    "batch_size": 256,
+    "freeze_layers": 12,
+
+    "pooler": "cls", 
+
+    "lr": 1e-5,
+    "weight_decay": 0.0,
+
+    "scheduler": {
+        "type": "LinearLR",
+        "step_size": 10,
+        "gamma": 0.1,
+        "optional_params": {}
+    },
+
+    "gradient_clipping": {
+        "enabled": true,
+        "max_grad_norm": 1.0
+    },
+
+    "n_epochs": 50,
+
+    "log_interval": 0.01,
+    "model_save_interval": 0.2,
+
+    "align_alpha": 2,
+    "alignment_w": 1,
+    "uniformity_w": 1,
+    "uniformity_t": 2,
+
+    "label_normalized": true,
+    "eval_model_ckpt": "/home/mmm1248/Project/Polyinfo/PolyCL/model/eval_model",
+    "downstream_dataset": "/home/mmm1248/Project/Polyinfo/PolyCL/datasets/Eea.csv",
+    "split": "K_fold",
+    "k_fold": 10,
+    "pretrained_model_path": "/home/mmm1248/Project/Polyinfo/PolyCL/model/final_995799_original_original_True_128_1e-05_LinearLR_5_0.05.pth",
+    "best_model": "/home/mmm1248/Project/Polyinfo/PolyCL/model/best_finetune/",
+    "tolerance": 5,
+    "dropout_ratio": 0.1,
+    "num_workers": 8,
+    "block_size": 512
+
+}

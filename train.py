@@ -1,17 +1,19 @@
 import os
 import random
+import logging
 import numpy as np
 import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
 
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 #from torch.optim.lr_scheduler import LinearLR
 from torch.cuda.amp import autocast, GradScaler # mixed precision training
+from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from utils import AverageMeter
@@ -26,9 +28,8 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-pretrain_data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
-#pretrain_data = pretrain_data[:1000]
-psmile_data = [dataloader.to_psmiles(smiles) for smiles in pretrain_data]
+data = utils.read_txt(config["pretrain_data_txt"]) # 这个数据集带星号外带括号，是polybert的数据
+psmile_data = [dataloader.to_psmiles(smiles) for smiles in data]
 pretrain_data = psmile_data
 
 # shuffle the list
@@ -44,8 +45,10 @@ dataset2 = dataloader.Construct_Dataset(smiles = pretrain_data1, mode = config["
 dataloader1 = DataLoader(dataset1, batch_size=config["batch_size"], shuffle=False, drop_last = True)
 dataloader2 = DataLoader(dataset2, batch_size=config["batch_size"], shuffle=False, drop_last = True)
 
-polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT')
-polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
+
+model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = config["model_dropout"])
+polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
+polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"], freeze_layer_dropout = False)
 model = polycl.polyCL(encoder= polyBERT, pooler = config["pooler"])
 
 # parallel
@@ -58,19 +61,39 @@ model.to(device)
 
 ntxent_loss = polycl.NTXentLoss(device = device, batch_size = config["batch_size"], temperature = config["temperature"], use_cosine_similarity = config["use_cosine_similarity"])
 
-#optimizer = optim.Adam(model.parameters(), lr = config["lr"], weight_decay=config["weight_decay"])
 optimizer = optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
-
-# YY LinearLR Scheduler
-#scheduler = LinearLR(optimizer, start_factor = 0.5, total_iters = 4)
 scheduler = utils.get_scheduler(config, optimizer)
 
-#mixed precision
+# mixed precision
 scaler = GradScaler()
 
-'''alignment and uniformity'''
+# create a logger
+# logging.basicConfig(filename=f"/home/mmm1248/Project/Polyinfo/PolyCL/log/{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.log", 
+#                     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger()
+
+# initiation of alignment and uniformity meters
 align_meter = AverageMeter('align_loss')
 unif_meter = AverageMeter('uniform_loss')
+
+# logger.info(f"Number of training samples: {len(pretrain_data)}")
+# logger.info(f"Augmentation Mode 1: {config['aug_mode_1']}")
+# logger.info(f"Augmentation Mode 2: {config['aug_mode_2']}")
+# logger.info(f"Model_Dropout: {config['model_dropout']}")
+# logger.info(f"Batch_Size: {config['batch_size']}")
+# logger.info(f"Maximum Learning_Rate: {config['lr']}")
+# logger.info(f"Learning Rate Scheduler: {config['scheduler']['type']}")
+# logger.info(f"Total Number of Epochs: {config['n_epochs']}")
+# logger.info(f"NTXENT Temperature: {config['temperature']}")
+
+def load_checkpoint(epoch, model, optimizer, lr_scheduler, path):
+    checkpoint = torch.load(path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
+    return epoch, model, optimizer, lr_scheduler
 
 def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
     model.train()
@@ -78,10 +101,10 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
     #n_iter = 1
     total_batches = len(dataloader1) * n_epochs
 
-    save_every = int(config["save_interval"] * total_batches)
+    save_every = int(config["model_save_interval"] * total_batches)
     log_every  =int(config["log_interval"] * total_batches)
     
-    for epoch in range(1, n_epochs):
+    for epoch in range(1, n_epochs + 1):
 
         epoch_loss = 0.0
         align_meter.reset()
@@ -98,8 +121,8 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
 
             with autocast():
             
-                _, out1 = model(batch1)
-                _, out2 = model(batch2)
+                rep1, out1 = model(batch1)
+                rep2, out2 = model(batch2)
                 
                 out1 = nn.functional.normalize(out1, dim =1)
                 out2 = nn.functional.normalize(out2, dim =1)
@@ -107,27 +130,33 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
                 #loss = polycl.NTXentloss(out1, out2)
                 loss = ntxent_loss(out1, out2)
             
-            # if n_iter % 10 == 0:    
-            #     print("train loss", loss.detach().cpu().item())
             epoch_loss += loss.detach().cpu().item()
-            align_loss_val = align_loss(out1, out2, alpha = config["align_alpha"])
-            unif_loss_val = (uniform_loss(out1, t=config["uniformity_t"]) + uniform_loss(out2, t=config["uniformity_t"])) / 2
-            al_un_loss = loss = align_losis_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
             batches_done = (epoch - 1) * len(dataloader1) + (i + 1)
 
-            if batches_done == 1 or batches_done % log_every == 0:
+            if batches_done == list(range(1, log_every, int(log_every/50))) or batches_done % log_every == 0:  # 一开始记录频繁一点 # check int(log_every/50) 对不对
+                
                 avg_loss = epoch_loss / (i + 1)
-                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .6f}, Unif_Loss: {unif_loss_val: .6f}, Al_un_loss: {al_un_loss: .6f}")
 
-            #n_iter += 1
-            #loss.backward()
+                rep1_norm = nn.functional.normalize(rep1, dim =1)
+                rep2_norm = nn.functional.normalize(rep2, dim =1)
+
+                align_loss_val = align_loss(rep1_norm, rep2_norm, alpha = config["align_alpha"])
+                unif_loss_val = (uniform_loss(rep1_norm, t=config["uniformity_t"]) + uniform_loss(rep2_norm, t=config["uniformity_t"])) / 2
+                #al_un_loss = loss = align_loss_val * config["alignment_w"] + unif_loss_val * config["uniformity_w"]
+                
+                print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}")
+                # logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}")
+                # logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Align Loss: {align_loss_val:.4f}, Unif_Loss: {unif_loss_val: .4f}")
+                # logger.info(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, 'learning_rate_current_epoch', optimizer.param_groups[0]['lr']")
+                #print(f"Epoch {epoch}, Iteration {i + 1}/{len(dataloader1)}, Avg Loss: {avg_loss:.4f}, Align Loss: {align_loss_val: .4f}, Unif_Loss: {unif_loss_val: .4f}, Al_un_loss: {al_un_loss: .4f}")
+
             # backward pass with gradient scaling
             scaler.scale(loss).backward()
             ########### gradient clipping
             #torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1.0)
             if config["gradient_clipping"]["enabled"]:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 
-                                               max_norm=config["gradient_clipping"]["max_grad_norm"])
+                                                max_norm=config["gradient_clipping"]["max_grad_norm"])
 
             #optimizer.step()
             #Gradient step with GradScaler
@@ -135,18 +164,26 @@ def train(model, dataloader1, dataloader2, device, optimizer, n_epochs):
             scaler.update()
 
             ########### LinearLR scheduler
-            scheduler.step()
+            if config["scheduler"]["type"] == "LinearLR":
+                scheduler.step(batches_done / total_batches)
+            
+            else:
+                scheduler.step()
 
-            # if n_iter == 2:
-            #     print("training_initiated")
 
-            if batches_done % save_every == 0:
-                if isinstance(model, nn.DataParallel):        
-                    model.module.save_model(path = f"model/model_epoch{epoch}_batch{i+1}")
-                else:
-                    model.save_model(path = f"model/model_epoch{epoch}_batch{i+1}")
-                print(f"Model saved at Epoch [{epoch}], Batch [{i+1}]")
+            if batches_done % save_every == 0:      
+                model.module.save_model(path = f"/home/mmm1248/Project/Polyinfo/PolyCL/model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
+                
+                #logger.info(f"Intermediate model saved at Epoch [{epoch-1}], Batch [{i+1}] with name: model/epoch{epoch-1}_batch{i+1}_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
+                print(f"Model saved at Epoch [{epoch-1}], Batch [{i+1}]")
+                      
+    model.module.save_model(path = f"/home/mmm1248/Project/Polyinfo/PolyCL/model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
+    
+    #logger.info(f"Final model saved with name: model/final_{len(pretrain_data)}_{config['aug_mode_1']}_{config['aug_mode_2']}_{config['model_dropout']}_{config['batch_size']}_{config['lr']}_{config['scheduler']['type']}_{config['n_epochs']}_{config['temperature']}.pth")
     print('train_finished and model_saved')
 
-      
-train(model, dataloader1, dataloader2, device, optimizer, config["n_epochs"])
+if config['resume_training']:
+    start_epoch, model, optimizer, scheduler = load_checkpoint(epoch, model, optimizer, scheduler, config['checkpoint_path']) 
+    train(model, dataloader1, dataloader2, device, optimizer, config["n_epochs"] - start_epoch)   
+else:
+    train(model, dataloader1, dataloader2, device, optimizer, config["n_epochs"])

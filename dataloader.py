@@ -109,3 +109,47 @@ class Construct_Dataset(Dataset):
     def __len__(self):
         return len(self.smiles)
     
+class Normalizer(object):
+    def __init__ (self, tensor):
+        self.mean = torch.mean(tensor)
+        self.std = torch.std(tensor)
+
+    def norm(self, tensor):
+        return (tensor - self.mean) / self.std
+
+    def denorm(self, normed_tensor):
+        return normed_tensor * self.std + self.mean
+
+    def state_dict(self):
+        return {'mean': self.mean, 'std': self.std}
+
+    def load_state_dict(self, state_dict):
+        self.mean = state_dict['mean']
+        self.std = state_dict['std']
+        
+class Downstream_dataset(Dataset):
+    def __init__(self, data, block_size):
+        self.tokenizer = AutoTokenizer.from_pretrained('kuelumbus/polyBERT')
+        self.data = data
+        self.block_size = block_size
+        
+    def __len__(self):
+        self.len = len(self.data)
+        return self.len
+    
+    def __getitem__(self, i):
+        row = self.data.iloc[i]
+        smiles = row[0]
+        labels = row[1]
+        
+        encodings = self.tokenizer(smiles, 
+                                   truncation = True, 
+                                   max_length = self.block_size, 
+                                   padding = 'max_length', 
+                                   return_tensors = 'pt')    
+        
+        return {
+            'input_ids': encodings['input_ids'].squeeze(),
+            'attention_mask': encodings['attention_mask'].squeeze(),
+            'labels': torch.tensor(labels, dtype = torch.float)
+            }

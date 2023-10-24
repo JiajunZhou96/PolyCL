@@ -2,6 +2,8 @@ import os
 import torch
 import torch.nn as nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   
+
 
 import utils
 config = utils.get_config(print_dict = False)
@@ -39,27 +41,6 @@ def first_last_pooling(model_output, attention_mask):
     
     return pooled_result
 
-'''
-def NTXentloss(x1, x2):
-    T = config["temperature"]
-    batch_size, _ = x1.size()
-    
-    # batch_size *= 2
-    # x1, x2 = torch.cat((x1, x2), dim=0), torch.cat((x2, x1), dim=0)
-
-    x1_abs = x1.norm(dim=1)
-    x2_abs = x2.norm(dim=1)
-    
-    sim_matrix = torch.einsum('ik,jk->ij', x1, x2) / torch.einsum('i,j->ij', x1_abs, x2_abs)  #cosine similarity
-    sim_matrix = torch.exp(sim_matrix / T)
-    pos_sim = sim_matrix[range(batch_size), range(batch_size)]
-    loss = pos_sim / (sim_matrix.sum(dim=1) - pos_sim)
-    loss = - torch.log(loss).mean()
-    
-    return loss
-'''
-
-
 # contrastive learning based on polyCL
 #from polycl import *
 class polyCL(nn.Module):
@@ -75,8 +56,12 @@ class polyCL(nn.Module):
     def forward(self, data):  # dataloader
         
         ## if self.pooler: # or "mean" or " max"
-        model_output = self.encoder(input_ids = data["input_ids"], attention_mask = data["attention_mask"], token_type_ids = data["token_type_ids"])
-        
+        #model_output = self.encoder(input_ids = data["input_ids"], attention_mask = data["attention_mask"], token_type_ids = data["token_type_ids"])
+        if "token_type_ids" in data:
+            model_output = self.encoder(input_ids = data["input_ids"], attention_mask = data["attention_mask"], token_type_ids = data["token_type_ids"])
+        else:
+            model_output = self.encoder(input_ids = data["input_ids"], attention_mask = data["attention_mask"])
+
         # 如果不进行 pooling 的话，这个 model_output 就只能通过 rnn 类的时间序列模型来进行处理了
         if self.pooler == "mean":
             rep = mean_pooling(model_output, model_output['attention_mask'])
@@ -104,74 +89,33 @@ class polyCL(nn.Module):
         else:
             path = os.path.join(os.getcwd(), path)
         
-        if os.path.exists(path) == True:
-            pass
-            print('Path already existed.')
-        else:
-            os.mkdir(path)
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+            print('Directory created')
+        # if os.path.exists(path) == True:
+        #     pass
+        #     print('Path already existed.')
+        # else:
+        #     os.mkdir(path)
             
         print('Path created.')
         
-        torch.save(self.state_dict(), path + '/polycl_model.pth')
-        
+        if isinstance(self, nn.DataParallel):
+            torch.save(self.module.state_dict(), path)
+        else:
+            torch.save(self.state_dict(), path)
+
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict()
+        }
+
     def load_pretrained(self):
         
         pass
-        
-'''
-class polyCL2(nn.Module):
-
-    def __init__(self, encoder, pooler):
-        super(polyCL2, self).__init__()
-        self.encoder = encoder
-        self.pooler = pooler
-        self.projection_head = nn.Sequential(nn.Linear(600, 256),   # 这里第一个向量应该是 embedding size
-                                            nn.ReLU(inplace=True), 
-                                            nn.Linear(256, 128))
-
-    def forward(self, data):  # dataloader
-        
-        ## if self.pooler: # or "mean" or " max"
-        data1, data2 = data
-        model_output1 = self.encoder(input_ids = data1["input_ids"], attention_mask = data1["attention_mask"], token_type_ids = data1["token_type_ids"])
-        model_output2 = self.encoder(input_ids = data2["input_ids"], attention_mask = data2["attention_mask"], token_type_ids = data2["token_type_ids"])
-        
-        if self.pooler == "mean":
-            rep1 = mean_pooling(model_output1, model_output1['attention_mask'])
-            rep2 = mean_pooling(model_output2, model_output2['attention_mask'])
-        
-        elif self.pooler == "cls":
-            rep1 = cls_pooling(model_output1)
-            rep2 = cls_pooling(model_output2)
-        
-        elif self.pooler == "first_last":
-            rep1 = first_last_pooling(model_output1, model_output1['attention_mask'])
-            rep2 = first_last_pooling(model_output2, model_output2['attention_mask'])
-        
-        out1 = self.projection_head(rep1)
-        out2 = self.projection_head(rep2)
-        
-        loss = NTXentloss(out1, out2)
-        
-        return loss, (rep1, rep2), (out1, out2)
-    
-    def save_model(self, path = None):
-        
-        if path is None:
-            path = os.path.join(os.getcwd(), 'model')
-        else:
-            path = os.path.join(os.getcwd(), path)
-        
-        if os.path.exists(path) == True:
-            pass
-            print('Path already existed.')
-        else:
-            os.mkdir(path)
-            
-        print('Path created.')
-        
-        torch.save(self.state_dict(), path + '/polycl_model.pth')
-'''  
 
 
 import torch
@@ -239,10 +183,18 @@ class NTXentLoss(torch.nn.Module):
         loss = self.criterion(logits, labels)
 
         return loss / (2 * self.batch_size)
-    
-def freeze_layers(model, layers_to_freeze = False):
 
-    #Freeze layers
+def set_dropout(config, dropout):
+    if dropout == True:  # initially attention_probs_dropout_prob and hidden_dropout_prob are 0.1
+        pass
+    elif dropout == False:
+        config.attention_probs_dropout_prob = 0.0
+        config.hidden_dropout_prob = 0.0  # 这一行本质上是下面的 attention output 和 output 的结合
+    
+    return config
+
+def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False):
+    
     if layers_to_freeze is False:
         pass
     
@@ -250,11 +202,83 @@ def freeze_layers(model, layers_to_freeze = False):
         for i in range(layers_to_freeze):
             for param in model.encoder.layer[i].parameters():
                 param.requires_grad = False
+            
+                if freeze_layer_dropout is False:
+                    model.encoder.layer[i].attention.self.dropout.p = 0.0
+                    model.encoder.layer[i].attention.output.dropout.p = 0.0
+                    model.encoder.layer[i].output.dropout.p = 0.0
+                else:
+                    pass
 
     elif isinstance(layers_to_freeze, list):
         for idx in layers_to_freeze:
             for param in model.encoder.layer[idx].parameters():
                 param.requires_grad = False
+            
+                if freeze_layer_dropout is False:
+                    model.encoder.layer[idx].attention.self.dropout.p = 0.0
+                    model.encoder.layer[idx].attention.output.dropout.p = 0.0
+                    model.encoder.layer[idx].output.dropout.p = 0.0
+                else:
+                    pass
     
     else:
         raise ValueError("Input layers_to_freeze should be an int or a list of int.")
+
+
+class polycl_pred(torch.nn.Module):
+    def __init__(self, encoder, pooler, drop_ratio = 0):
+        super(polycl_pred, self).__init__()
+
+        self.PretrainedModel = polyCL(encoder, pooler)
+        self.regressor = nn.Sequential(
+            nn.Linear(600, 256),
+            nn.ReLU(inplace = True),
+            nn.Dropout(drop_ratio),
+            nn.Linear(256, 1)
+        )
+    
+    def from_pretrained(self, model_file):
+        self.PretrainedModel.load_state_dict(torch.load(model_file, map_location = 'cpu'))
+        self.PretrainedModel.to(device)
+
+    def forward(self, data):
+        rep, _ = self.PretrainedModel(data)
+        regression = self.regressor(rep)
+        
+        return regression
+        
+    def save_model(self, path = None):
+        if path is None:
+            path = os.path.join(os.getcwd(), 'model')
+        else:
+            path = os.path.join(os.getcwd(), path)
+        
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+            print('Directory created')
+        # if os.path.exists(path) == True:
+        #     pass
+        #     print('Path already existed.')
+        # else:
+        #     os.mkdir(path)
+            
+        print('Path created.')
+        
+        if isinstance(self, nn.DataParallel):
+            torch.save(self.module.state_dict(), path)
+        else:
+            torch.save(self.state_dict(), path)
+            
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict()
+        }
+        
+        torch.save(checkpoint, path)
+        
+        
+
