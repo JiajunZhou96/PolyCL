@@ -197,6 +197,10 @@ def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False)
     
     if layers_to_freeze is False:
         pass
+
+    elif layers_to_freeze == "all":
+        for param in model.parameters():
+            param.requires_grad = False
     
     elif isinstance(layers_to_freeze, int):
         for i in range(layers_to_freeze):
