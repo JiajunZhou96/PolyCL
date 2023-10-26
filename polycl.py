@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.nn as nn
+from copy import deepcopy
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   
 
@@ -198,6 +199,10 @@ def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False)
     if layers_to_freeze is False:
         pass
     
+    elif layers_to_freeze == 'all':
+        for param in model.encoder.parameters():
+            param.requires_grad = False
+    
     elif isinstance(layers_to_freeze, int):
         for i in range(layers_to_freeze):
             for param in model.encoder.layer[i].parameters():
@@ -227,7 +232,7 @@ def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False)
 
 
 class polycl_pred(torch.nn.Module):
-    def __init__(self, encoder, pooler, drop_ratio = 0):
+    def __init__(self, encoder, pooler, drop_ratio = 0.1):
         super(polycl_pred, self).__init__()
 
         self.PretrainedModel = polyCL(encoder, pooler)
@@ -243,42 +248,87 @@ class polycl_pred(torch.nn.Module):
         self.PretrainedModel.to(device)
 
     def forward(self, data):
+        # data = {
+        # "input_ids": input_ids,
+        # "attention_mask": attention_mask
+        # }
         rep, _ = self.PretrainedModel(data)
         regression = self.regressor(rep)
         
+        #return rep, regression
         return regression
         
     def save_model(self, path = None):
         if path is None:
-            path = os.path.join(os.getcwd(), 'model')
-        else:
-            path = os.path.join(os.getcwd(), path)
+            path = os.path.join(os.getcwd(), 'model', 'eval_model.pth')
+        # else:
+        #     path = os.path.join(path, 'eval_model.pth')
         
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
-            os.mkdir(directory)
+            os.makedirs(directory)
             print('Directory created')
+
+        if isinstance(self, nn.DataParallel):
+            torch.save(self.module.state_dict(), path)
+        else:
+            torch.save(self.state_dict(), path)
+
+        
         # if os.path.exists(path) == True:
         #     pass
         #     print('Path already existed.')
         # else:
         #     os.mkdir(path)
             
-        print('Path created.')
+        #print('Path created.')
         
+        
+            
+        # checkpoint = {
+        #     'epoch': epoch,
+        #     'model_state_dict': model.state_dict(),
+        #     'optimizer_state_dict': optimizer.state_dict(),
+        #     'scheduler_state_dict': scheduler.state_dict()
+        # }
+        
+        # torch.save(checkpoint, path)
+    
+class Downstream_regression(nn.Module):
+    def __init__(self, PretrainedModel, drop_ratio = 0):
+        super(Downstream_regression, self).__init__()
+
+        self.PretrainedModel = deepcopy(PretrainedModel)
+
+        self.regressor = nn.Sequential(
+            nn.Linear(self.PretrainedModel.config.hidden_size, self.PretrainedModel.config.hidden_size),
+            nn.ReLU(inplace = True),
+            nn.Dropout(drop_ratio),
+            nn.Linear(self.PretrainedModel.config.hidden_size, 1)
+        )
+
+    def forward(self, input_ids, attention_mask):
+        outputs = self.PretrainedModel(input_ids = input_ids, attention_mask = attention_mask)
+        logits = outputs.last_hidden_state[:, 0, :]
+        output = self.regressor(logits)
+
+        return output  
+
+    def save_model(self, path = None):
+        if path is None:
+            path = os.path.join(os.getcwd(), 'model', 'eval_transmodel.pth')
+        # else:
+        #     path = os.path.join(path, 'eval_model.pth')
+        
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print('Directory created')
+
         if isinstance(self, nn.DataParallel):
             torch.save(self.module.state_dict(), path)
         else:
             torch.save(self.state_dict(), path)
-            
-        checkpoint = {
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict()
-        }
-        
-        torch.save(checkpoint, path)
-        
+
         
 

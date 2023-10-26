@@ -10,8 +10,9 @@ import numpy as np
 import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
+import logging
 
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -42,17 +43,34 @@ utils.set_seed(seed)
 # Move the model to GPUs 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-#criterion = nn.BCEWithLogitsloss(reduction = None)
+# create a logger
+logging.basicConfig(filename=f"/rds/general/user/yy6222/home/DL/PolyCL_v0/log_file/test/{os.path.splitext(os.path.basename(config['downstream_dataset']))[0]}_lr_{config['lr']}_{config['batch_size']}_fold_{config['k_fold']}_nepochs_{config['n_epochs']}_dropout_{config['dropout_ratio']}_{config['pretrained_model_setting']['lr_scheduler']}_{config['pretrained_model_setting']['batchsize']}_{config['pretrained_model_setting']['size_dataset']}.log", 
+                    level=logging.INFO, filemode = 'w', format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
+
+logger.info(f"Number of training samples: {len(pd.read_csv(config['downstream_dataset']))}")
+logger.info(f"Batch_Size: {config['batch_size']}")
+logger.info(f"Downstream Learning_Rate: {config['lr']}")
+logger.info(f"Total Number of Epochs: {config['n_epochs']}")
+
 
 def train(model, train_dataloader, device, optimizer, loss_fn, normalizer):
     model.train()
-    #normalizer = None
+    model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = False)
+    polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
+    for param in polyBERT.parameters():
+        param.requires_grad = False
+    #polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
 
     for step, batch in enumerate(tqdm(train_dataloader, desc = 'Iteration')):
-        #batch = batch.to(device)
         batch = {key: value.to(device) for key, value in batch.items()}
-        pred = model(batch) #model prediction
-        prop = batch['labels'].view(pred.shape).to(torch.float32) #ground truth
+        # input_ids = batch['input_ids']
+        # attention_mask = batch['attention_mask']
+        #rep, pred = model(batch) #model prediction
+        #pred = model(input_ids, attention_mask).to(device)
+        pred = model(batch)
+        #prop = batch['labels'].to(device).float()
+        prop = batch['labels'].view(pred.shape).to(torch.float32)
 
         optimizer.zero_grad()
         if config['label_normalized']:
@@ -61,7 +79,6 @@ def train(model, train_dataloader, device, optimizer, loss_fn, normalizer):
             loss = loss_fn(pred, prop)
         loss.backward()
         optimizer.step()
-    #return None
 
 def eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataloader = None, normalizer = None):
     model.eval()
@@ -81,8 +98,12 @@ def eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataload
         
         for step, batch in enumerate(tqdm(train_dataloader, desc = 'Training Iteration')):
             batch = {key: value.to(device) for key, value in batch.items()}
+            # input_ids = batch['input_ids']
+            # attention_mask = batch['attention_mask']
+            #rep, pred = model(batch)
+            #pred = model(input_ids, attention_mask).to(device)
             pred = model(batch)
-            prop = batch['labels'].to(device).float()
+            prop = batch['labels'].view(pred.shape).to(torch.float32)
             if config['label_normalized']:
                 loss = loss_fn(pred, normalizer.denorm(prop))
             else:
@@ -96,11 +117,19 @@ def eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataload
         r2_train = r2score(train_pred.flatten().detach().cpu(), train_true.flatten().detach().cpu()).item()
         print('trian RMSE = ', np.sqrt(train_loss))
         print('train r^2 = ', r2_train)
+        
+        logger.info(f"Step: {step + 1}")
+        logger.info(f"Train RMSE: {np.sqrt(train_loss):.4f}")
+        logger.info(f"Train R2: {r2_train:.4f}")
 
         for step, batch in enumerate(tqdm(test_dataloader, desc = 'Test Iteration')):
             batch = {key: value.to(device) for key, value in batch.items()} 
+            # input_ids = batch['input_ids']
+            # attention_mask = batch['attention_mask']
+            #rep, pred = model(batch)
+            #pred = model(input_ids, attention_mask).to(device)
             pred = model(batch)
-            prop = batch['labels'].to(device).float()
+            prop = batch['labels'].view(pred.shape).to(torch.float32)
             if config['label_normalized']:
                 loss = loss_fn(pred, normalizer.denorm(prop))
             else:
@@ -114,12 +143,18 @@ def eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataload
         r2_test = r2score(test_pred.flatten().detach().cpu(), test_true.flatten().detach().cpu()).item()
         print('test RMSE = ', np.sqrt(test_loss))
         print('test r^2 = ', r2_test)
+        
+        logger.info(f"Test RMSE: {np.sqrt(test_loss):.4f}")
+        logger.info(f"Test R2: {r2_test:.4f}")
 
         if val_dataloader:
             for batch in enumerate(tqdm(val_dataloader, desc = 'Valid Iteration')):
-                batch = {key: value.to(device) for key, value in batch.items()} 
+                batch = {key: value.to(device) for key, value in batch.items()}
+                # input_ids = batch['input_ids']
+                # attention_mask = batch['attention_mask']
+                #pred = model(input_ids, attention_mask).to(device)
                 pred = model(batch)
-                prop = batch['labels'].to(device).float()
+                prop = batch['labels'].view(pred.shape).to(torch.float32)
                 if config['label_normalized']:
                     loss = loss_fn(pred, Normalizer.denorm(prop))
                 else:
@@ -134,7 +169,7 @@ def eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataload
             print('test RMSE = ', np.sqrt(val_loss))
             print('test r^2 = ', r2_val)
     
-    model.module.save_model(path = config['eval_model_ckpt'])
+    model.save_model(path = f"/rds/general/user/yy6222/home/DL/PolyCL_v0/model/eval_model/{os.path.splitext(os.path.basename(config['downstream_dataset']))[0]}_lr_{config['lr']}_1M128_{config['batch_size']}_fold_{config['k_fold']}_nepochs_{config['n_epochs']}_dropout_{config['dropout_ratio']}.pth")
 
     if val_dataloader:
         return train_loss, test_loss, val_loss, r2_train, r2_test, r2_val
@@ -187,7 +222,8 @@ def main(config):
         test_dataloader = DataLoader(test_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
         val_dataloader = DataLoader(val_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
 
-        polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT')
+        model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = False)
+        polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
         polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
         model = polycl.polycl_pred(encoder = polyBERT, pooler = config['pooler'], drop_ratio = config['dropout_ratio'])
         model.from_pretrained(config['pretrained_model_path'])
@@ -195,6 +231,7 @@ def main(config):
         if torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
         model.to(device)
+        
 
         train_labels = []
         for batch in train_dataloader:
@@ -261,55 +298,55 @@ def main(config):
         print('Std of Valid RMSE = ', std_val_rmse)
         print('Std of Valid R2 = ', std_val_r2)
 
-
-    # elif config['split'] == 'random':
-    #     dataset = pd.read_csv(config['downstream_dataset'], skiprows = 1, header = None)
-    #     mol_list = pd.read_csv(config['downstream_dataset'], header = None)[0].tolist()
-    #     train_dataset, val_dataset, test_dataset = random_split(dataset, mol_list, train_frac = 0.8, val_frac = 0.1, test_frac = 0.1)
-    #     print('Random splitting')
-
-    #     train_dataset_down = Downstream_dataset(train_dataset, block_size = config['block_size'])   
-    #     test_dataset_down = Downstream_dataset(test_dataset, block_size = config['block_size']) 
-    #     val_dataset_down = Downstream_dataset(val_dataset, block_size = config['block_size'])
-    #     train_dataloader = DataLoader(train_dataset_down, batch_size = config['batch_size'], shuffle = True, num_workers = config['num_workers'])
-    #     test_dataloader = DataLoader(test_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
-    #     val_dataloader = DataLoader(val_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
-
-
     elif config['split'] == 'K_fold':
         print('K Fold spliting')
         dataset = pd.read_csv(config['downstream_dataset'], skiprows = 1, header = None)
         train_dataset, test_dataset = kfold_split(dataset, k = config['k_fold'], seed = config['seed'])
         
-        #train_dataset_down = Downstream_dataset(train_dataset, block_size = config['block_size'])  
         train_dataset_down = [Downstream_dataset(train_dataset[i], block_size = config['block_size']) for i in range(config['k_fold'])]
-        #test_dataset_down = Downstream_dataset(test_dataset, block_size = config['block_size']) 
         test_dataset_down = [Downstream_dataset(test_dataset[i], block_size = config['block_size']) for i in range(config['k_fold'])]
-        #train_dataloader = DataLoader(train_dataset_down, batch_size = config['batch_size'], shuffle = True, num_workers = config['num_workers'])
         train_dataloader = [DataLoader(train_dataset_down[i], batch_size = config['batch_size'], shuffle = True, num_workers = config['num_workers']) for i in range(config['k_fold'])]
-        #test_dataloader = DataLoader(test_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
         test_dataloader = [DataLoader(test_dataset_down[i], batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers']) for i in range(config['k_fold'])]     
         
-        polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT')
-        polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
+        
+        model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = False)
+        polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
+        for param in polyBERT.parameters():
+            param.requires_grad = False
+        #polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
         model = polycl.polycl_pred(encoder = polyBERT, pooler = config['pooler'], drop_ratio = config['dropout_ratio'])
         model.from_pretrained(config['pretrained_model_path'])
+        
         loss_fn = nn.MSELoss()
+        model.to(device)
         if torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
-        model.to(device)
+        
+        
         
         train_loss_avg, test_loss_avg, train_r2_avg, test_r2_avg = [], [], [], []   
         best_r2 = 0.0
         for fold_num, dataloader in enumerate(train_dataloader):
             print('Fold %s/%s' % (fold_num + 1, config['k_fold']))
-            # train_labels = []
-            # for batch in dataloader:
-            #     train_labels.append(batch['labels'])
+            logger.info(f"Starting Fold {fold_num + 1}/{config['k_fold']}")
+
             train_labels = [batch['labels'] for batch in dataloader]
             train_labels_tensor = torch.cat(train_labels, dim=0)
             # Instantiate the Normalizer
             normalizer = Normalizer(train_labels_tensor)
+            
+            model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = False)
+            polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
+            for param in polyBERT.parameters():
+                param.requires_grad = False
+            #polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
+            model = polycl.polycl_pred(encoder = polyBERT, pooler = config['pooler'], drop_ratio = config['dropout_ratio'])
+            model.from_pretrained(config['pretrained_model_path'])
+            loss_fn = nn.MSELoss()
+            model.to(device)
+            if torch.cuda.device_count() > 1:
+                model = nn.DataParallel(model)
+            
             optimizer = optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
 
             torch.cuda.empty_cache()
@@ -319,11 +356,15 @@ def main(config):
             count = 0
             
             current_test_dataloader = test_dataloader[fold_num]
+            
             for epoch in range(config['n_epochs']):
                 print("epoch: %s/%s" % (epoch + 1, config['n_epochs']))
+                #logger.info(f"Epoch: {epoch + 1}")
+                logger.info(f"Epoch {epoch + 1}/{config['n_epochs']} in Fold {fold_num + 1}/{config['k_fold']}")
+                
                 train(model, dataloader, device, optimizer, loss_fn, normalizer)
                 train_loss, test_loss, r2_train, r2_test = eval(model, device, dataloader, current_test_dataloader, loss_fn, val_dataloader = None, normalizer = normalizer)
-
+                
                 if r2_test > best_test_r2:
                     best_train_r2 = r2_train
                     best_test_r2 = r2_test
@@ -335,13 +376,16 @@ def main(config):
 
                 if r2_test > best_r2:
                     best_r2 = r2_test
-                    model.save_model(path = config['best_model'])
+                    model.save_model(path = f"/rds/general/user/yy6222/home/DL/PolyCL_v0/model/best_finetune/{os.path.splitext(os.path.basename(config['downstream_dataset']))[0]}_lr_{config['lr']}_1M128_{config['batch_size']}_fold_{config['k_fold']}_nepochs_{config['n_epochs']}_dropout_{config['dropout_ratio']}.pth")
 
                 if count >= config['tolerance']:
                     print('Early stop')
                     if best_test_r2 == 0:
                         print('Bad performance with r^2 < 0')
                     break
+                
+                logger.info(f"Epoch {epoch + 1} - Fold {fold_num + 1} - Train Loss: {train_loss} - Test Loss: {test_loss} - Train R^2: {r2_train} - Test R^2: {r2_test}")
+
 
             train_loss_avg.append(np.sqrt(train_loss_best))
             test_loss_avg.append(np.sqrt(test_loss_best))
@@ -355,6 +399,10 @@ def main(config):
         test_r2 = np.mean(np.array(test_r2_avg))
         std_test_rmse = np.std(np.array(test_loss_avg))
         std_test_r2 = np.std(np.array(test_r2_avg))
+        
+        logger.info(f"Average Metrics after {config['k_fold']} Folds - Train RMSE: {train_rmse} - Test RMSE: {test_rmse} - Train R^2: {train_r2} - Test R^2: {test_r2}")
+        logger.info(f"Standard Deviation of Test RMSE: {std_test_rmse}")
+        logger.info(f"Standard Deviation of Test R^2: {std_test_r2}")
 
         print('Train RMSE = ', train_rmse )
         print('Test RMSE = ', test_rmse)
@@ -365,79 +413,6 @@ def main(config):
 
     else:
         raise ValueError('Invalid split option')
-
-    # train_dataset_down = Downstream_dataset(train_dataset, block_size = config['block_size'])
-    # test_dataset_down = Downstream_dataset(test_dataset, block_size = config['block_size'])
-    # train_dataloader = DataLoader(train_dataset_down, batch_size = config['batch_size'], shuffle = True, num_workers = config['num_workers'])
-    # test_dataloader = DataLoader(test_dataset_down, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
-    # # if val_dataset:
-    # #     val_dataloader = DataLoader(val_dataset, batch_size = config['batch_size'], shuffle = False, num_workers = config['num_workers'])
-    
-    # polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT')
-    # polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"])
-    # model = polycl.polycl_pred(encoder = polyBERT, pooler = config['pooler'], drop_ratio = config['dropout_ratio'])
-    # model.from_pretrained(config['pretrained_model_path'])
-    # loss_fn = nn.MSELoss()
-    # if torch.cuda.device_count() > 1:
-    #     model = nn.DataParallel(model)
-    # model.to(device)
-
-    # train_labels = []
-    # for batch in train_dataloader:
-    #     train_labels.append(batch['labels'])
-    # train_labels_tensor = torch.cat(train_labels, dim=0)
-    # # Instantiate the Normalizer
-    # normalizer = Normalizer(train_labels_tensor)
-    # optimizer = optim.AdamW(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
-
-    # torch.cuda.empty_cache()
-    # best_r2 = 0.0
-    # train_loss_best, test_loss_best, best_train_r2, best_test_r2 = 0.0, 0.0, 0.0, 0.0
-    # train_loss_avg, test_loss_avg, train_r2_avg, test_r2_avg = [], [], [], []
-    # count = 0
-    # for epoch in range(config['n_epochs']):
-    #     print("epoch: %s/$s" % (epoch + 1, config['n_epochs']))
-    #     train(model, train_dataloader, device, optimizer, loss_fn, normalizer)
-    #     train_loss, test_loss, r2_train, r2_test = eval(model, device, train_dataloader, test_dataloader, loss_fn, val_dataloader = None, normalizer = normalizer)
-
-    #     if r2_test > best_test_r2:
-    #         best_train_r2 = r2_train
-    #         best_test_r2 = r2_test
-    #         train_loss_best = train_loss
-    #         test_loss_best = test_loss
-    #         count = 0
-    #     else:
-    #         count += 1
-
-    #     if r2_test > best_r2:
-    #         best_r2 = r2_test
-    #         model.save_model(path = config['best_model'])
-
-    #     if count >= config['tolerance']:
-    #         print('Early stop')
-    #         if best_test_r2 == 0:
-    #             print('Bad performance with r^2 < 0')
-    #         break
-
-    # train_loss_avg.append(np.sqrt(train_loss_best))
-    # test_loss_avg.append(np.sqrt(test_loss_best))
-    # train_r2_avg.append(best_train_r2)
-    # test_r2_avg.append(best_test_r2)
-
-    # '''Average metrics'''
-    # train_rmse = np.mean(np.array(train_loss_avg))
-    # test_rmse = np.mean(np.array(test_loss_avg))
-    # train_r2 = np.mean(np.array(train_r2_avg))
-    # test_r2 = np.mean(np.array(test_r2_avg))
-    # std_test_rmse = np.std(np.array(test_loss_avg))
-    # std_test_r2 = np.std(np.array(test_r2_avg))
-
-    # print('Train RMSE = ', train_rmse )
-    # print('Test RMSE = ', test_rmse)
-    # print('Train R2 = ', train_r2)
-    # print('Test R2 = ', test_r2)
-    # print('Std of Test RMSE = ', std_test_rmse)
-    # print('Std of Test R2 = ', std_test_r2)
 
 if __name__ == "__main__":
     main(config)

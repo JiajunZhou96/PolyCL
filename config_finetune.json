@@ -9,12 +9,12 @@
     "temperature": 0.05,
     "use_cosine_similarity": true,
 
-    "batch_size": 256,
-    "freeze_layers": 12,
+    "batch_size": 16,
+    "freeze_layers": "all",
 
     "pooler": "cls", 
 
-    "lr": 1e-5,
+    "lr": 1e-3,
     "weight_decay": 0.0,
 
     "scheduler": {
@@ -39,16 +39,24 @@
     "uniformity_w": 1,
     "uniformity_t": 2,
 
-    "label_normalized": true,
-    "eval_model_ckpt": "/home/mmm1248/Project/Polyinfo/PolyCL/model/eval_model",
-    "downstream_dataset": "/home/mmm1248/Project/Polyinfo/PolyCL/datasets/Eea.csv",
+    "pretrained_model_setting": {
+        "lr_scheduler": "ConstantLR",
+        "batchsize": "128",
+        "size_dataset": "1M",
+        "model_kwargs": {}
+    },
+
+    "label_normalized": false,
+    "eval_model_ckpt": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/eval_model/model.pth",
+    "downstream_dataset": "/rds/general/user/yy6222/home/DL/PolyCL_v0/datasets/Xc.csv",
     "split": "K_fold",
-    "k_fold": 10,
-    "pretrained_model_path": "/home/mmm1248/Project/Polyinfo/PolyCL/model/final_995799_original_original_True_128_1e-05_LinearLR_5_0.05.pth",
-    "best_model": "/home/mmm1248/Project/Polyinfo/PolyCL/model/best_finetune/",
-    "tolerance": 5,
+    "k_fold": 5,
+    "pretrained_model_path": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/final_995799_original_original_True_128_1e-05_ConstantLR_5_0.05.pth",
+    "best_model": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/best_finetune/model.pth",
+    "tolerance": 50,
     "dropout_ratio": 0.1,
     "num_workers": 8,
-    "block_size": 512
+    "block_size": 512,
+    "trans_modelpath": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/transpoly_ckpt/pretrain.pt"
 
 }
