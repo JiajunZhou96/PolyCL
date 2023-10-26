@@ -2,3 +2,7 @@
 polycl*
 *.zip
 *.ipynb
+model
+.DS_Store
+LICENSE
+README.md
