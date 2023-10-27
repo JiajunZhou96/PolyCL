@@ -47,7 +47,7 @@ dataloader2 = DataLoader(dataset2, batch_size=config["batch_size"], shuffle=Fals
 
 model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = config["model_dropout"])
 polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
-polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"], freeze_layer_dropout = False)
+#polycl.freeze_layers(polyBERT, layers_to_freeze = config["freeze_layers"], freeze_layer_dropout = False)
 model = polycl.polyCL(encoder= polyBERT, pooler = config["pooler"])
 
 # Move the model to GPUs 
