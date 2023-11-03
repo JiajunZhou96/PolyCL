@@ -15,6 +15,7 @@ $ conda activate polycl
 #$ pip install scikit-learn==0.24.2
 $ pip install torch==1.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 $ pip install transformers==4.20.1
+$ pip install -U torchmetrics
 $ pip install tensorboard
 $ conda install -c conda-forge rdkit
 ```
