@@ -15,7 +15,7 @@
     "pooler": "cls", 
 
     "lr": 1e-3,
-    "weight_decay": 0.0,
+    "weight_decay": 0,
 
     "scheduler": {
         "type": "LinearLR",
@@ -29,7 +29,7 @@
         "max_grad_norm": 1.0
     },
 
-    "n_epochs": 50,
+    "n_epochs": 500,
 
     "log_interval": 0.01,
     "model_save_interval": 0.2,
@@ -39,24 +39,21 @@
     "uniformity_w": 1,
     "uniformity_t": 2,
 
-    "pretrained_model_setting": {
-        "lr_scheduler": "ConstantLR",
-        "batchsize": "128",
-        "size_dataset": "1M",
-        "model_kwargs": {}
-    },
-
     "label_normalized": false,
     "eval_model_ckpt": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/eval_model/model.pth",
-    "downstream_dataset": "/rds/general/user/yy6222/home/DL/PolyCL_v0/datasets/Xc.csv",
+    "downstream_dataset": "/rds/general/user/yy6222/home/DL/PolyCL_v0/datasets/EPS.csv",
     "split": "K_fold",
     "k_fold": 5,
-    "pretrained_model_path": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/final_995799_original_original_True_128_1e-05_ConstantLR_5_0.05.pth",
+    "number_of_splits": 5,
+    "pretrained_model_path": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/final_995799_original_original_True_128_1e-05_ConstantLR_10_0.05.pth",
     "best_model": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/best_finetune/model.pth",
-    "tolerance": 50,
+    "patience": 50,
+    "early_stopping_start_epoch": 50,
     "dropout_ratio": 0.1,
     "num_workers": 8,
     "block_size": 512,
+    "hidden_size": 600,
+    "activation": "relu",
     "trans_modelpath": "/rds/general/user/yy6222/home/DL/PolyCL_v0/model/transpoly_ckpt/pretrain.pt"
 
 }

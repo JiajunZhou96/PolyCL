@@ -198,10 +198,6 @@ def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False)
     
     if layers_to_freeze is False:
         pass
-
-    elif layers_to_freeze == "all":
-        for param in model.parameters():
-            param.requires_grad = False
     
     elif layers_to_freeze == 'all':
         for param in model.encoder.parameters():
@@ -234,29 +230,40 @@ def freeze_layers(model, layers_to_freeze = False, freeze_layer_dropout = False)
     else:
         raise ValueError("Input layers_to_freeze should be an int or a list of int.")
 
-
+# For polyCL and polyBERT downstream evaluation
 class polycl_pred(torch.nn.Module):
-    def __init__(self, encoder, pooler, drop_ratio = 0.1):
+    #def __init__(self, encoder, pooler, drop_ratio = 0.1):
+    def __init__(self, PretrainedModel, drop_ratio = 0, hidden_size = 256, activation_func = nn.ReLU(inplace = True)):
         super(polycl_pred, self).__init__()
 
-        self.PretrainedModel = polyCL(encoder, pooler)
+        #self.PretrainedModel = polyCL(encoder, pooler)
+        self.PretrainedModel = deepcopy(PretrainedModel)
         self.regressor = nn.Sequential(
-            nn.Linear(600, 256),
-            nn.ReLU(inplace = True),
+            nn.Linear(600, hidden_size),
+            nn.LayerNorm(hidden_size),
+            activation_func,
             nn.Dropout(drop_ratio),
-            nn.Linear(256, 1)
+            nn.Linear(hidden_size, 1)
         )
     
     def from_pretrained(self, model_file):
         self.PretrainedModel.load_state_dict(torch.load(model_file, map_location = 'cpu'))
         self.PretrainedModel.to(device)
 
-    def forward(self, data):
-        # data = {
-        # "input_ids": input_ids,
-        # "attention_mask": attention_mask
-        # }
-        rep, _ = self.PretrainedModel(data)
+    def forward(self, input_ids = None, attention_mask = None, data = None):
+        if data is None:
+            data = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask
+            }
+            output = self.PretrainedModel(input_ids = input_ids, attention_mask = attention_mask)
+        else:
+            output = self.PretrainedModel(data)
+
+        if isinstance(output, tuple):
+            rep, _ = output
+        else:
+            rep  = output.last_hidden_state[:, 0, :]
         regression = self.regressor(rep)
         
         #return rep, regression
@@ -278,37 +285,18 @@ class polycl_pred(torch.nn.Module):
         else:
             torch.save(self.state_dict(), path)
 
-        
-        # if os.path.exists(path) == True:
-        #     pass
-        #     print('Path already existed.')
-        # else:
-        #     os.mkdir(path)
-            
-        #print('Path created.')
-        
-        
-            
-        # checkpoint = {
-        #     'epoch': epoch,
-        #     'model_state_dict': model.state_dict(),
-        #     'optimizer_state_dict': optimizer.state_dict(),
-        #     'scheduler_state_dict': scheduler.state_dict()
-        # }
-        
-        # torch.save(checkpoint, path)
-    
+# For TransPolymer downstream evaluation
 class Downstream_regression(nn.Module):
-    def __init__(self, PretrainedModel, drop_ratio = 0):
+    def __init__(self, PretrainedModel, drop_ratio = 0, activation_func = nn.ReLU(inplace = True)):
         super(Downstream_regression, self).__init__()
 
         self.PretrainedModel = deepcopy(PretrainedModel)
 
         self.regressor = nn.Sequential(
-            nn.Linear(self.PretrainedModel.config.hidden_size, self.PretrainedModel.config.hidden_size),
-            nn.ReLU(inplace = True),
+            nn.Linear(self.PretrainedModel.config.hidden_size, 256),
+            activation_func,
             nn.Dropout(drop_ratio),
-            nn.Linear(self.PretrainedModel.config.hidden_size, 1)
+            nn.Linear(256, 1)
         )
 
     def forward(self, input_ids, attention_mask):
