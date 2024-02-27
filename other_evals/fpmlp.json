@@ -1,0 +1,25 @@
+{
+    "seed": 72,
+
+    "batch_size": 16,
+
+    "lr": 1e-3,
+    "weight_decay": 0,
+
+    "n_epochs": 2000,
+
+    "downstream_dataset": "/rds/general/user/yy6222/home/DL/PolyCL_v0/datasets/Xc.csv",
+    "split": "K_fold",
+    "k_fold": 5,
+    "number_of_splits": 5,
+    "patience": 100,
+    "early_stopping_start_epoch": 100,
+    "dropout_ratio": 0.1,
+    "num_workers": 0,
+
+    "hidden_size": 600,
+    "activation": "relu",
+
+    "fingerprints_size": 512
+
+}
