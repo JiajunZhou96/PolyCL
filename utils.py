@@ -32,20 +32,13 @@ def get_config(path = None, print_dict = False):
     return config
 
 def set_seed(seed):
-    """
-    Set seeds and enable deterministic settings for reproducibility.
     
-    Parameters:
-    - seed (int): Seed for random number generators.
-    """
-    # Setting seeds
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
     
-    # Enabling determinism in cuDNN backend
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     
@@ -68,15 +61,10 @@ def get_scheduler(config, optimizer):
                                      step_size_up = scheduler_config["step_size"],
                                      **optional_params)
     elif scheduler_type == "LinearLR":
-        #return lr_scheduler.LinearLR(optimizer,
-        #                            start_factor = scheduler_config["start_factor"],
-        #                            total_iters = scheduler_config["total_iters"],
-        #                            **optional_params)
         return lr_scheduler.LambdaLR(optimizer,
                                     lr_lambda = lambda ratio: 1.0 -  ratio, # ratio is current batch/ total batch
                                     **optional_params)
     elif scheduler_type == "ConstantLR":
-        
         return lr_scheduler.LambdaLR(optimizer,
                                     lr_lambda = lambda x: 1.0,
                                     **optional_params)
@@ -118,11 +106,12 @@ class AverageMeter(object):
             val = val.item()
         return self.fmtstr.format(val=val, avg=self.avg)
 
-def align_loss(x, y, alpha=2):  # input [batch size, latent dim], and x, y are 
+def align_loss(x, y, alpha=2):
     return (x - y).norm(p=2, dim=1).pow(alpha).mean()
 
 def uniform_loss(x, t=2):
     return torch.pdist(x, p=2).pow(2).mul(-t).exp().mean().log()
+
 
 '''Split options'''
 '''scaffold spliter'''
@@ -160,9 +149,6 @@ def scaffold_split(dataset, mol_list, train_frac = 0.8, test_frac = 0.1, val_fra
     assert len(set(train_idx).intersection(set(val_idx))) == 0
     assert len(set(test_idx).intersection(set(val_idx))) == 0
 
-    # train_dataset = dataset[torch.tensor(train_idx)]
-    # test_dataset = dataset[torch.tensor(test_idx)]
-    # val_dataset = dataset[torch.tensor(val_idx)]
 
     train_dataset = dataset.iloc[train_idx]
     val_dataset = dataset.iloc[val_idx]
@@ -173,14 +159,9 @@ def scaffold_split(dataset, mol_list, train_frac = 0.8, test_frac = 0.1, val_fra
 '''K_fold splitter'''
 def kfold_split(data, k=5, seed=1):
     splits = KFold(n_splits=k, shuffle=True, random_state=seed)
-    #data_numeric = data.select_dtypes(include = [np.number])
     train_dataset = []
     test_dataset = []
     for fold, (train_idx, val_idx) in enumerate(splits.split(np.arange(data.shape[0]))):
-        #print('Fold {}'.format(fold + 1))
-        
-        # train_data = torch.tensor(data.iloc[train_idx, 1].values, dtype = torch.float32)
-        # test_data = torch.tensor(data.iloc[val_idx, 1].values, dtype = torch.float32)
 
         train_data = data.loc[train_idx, :].reset_index(drop=True)
         test_data = data.loc[val_idx, :].reset_index(drop=True)
@@ -206,10 +187,6 @@ def random_split(dataset, mol_list = None, train_frac = 0.8, test_frac = 0.1, va
     assert len(set(train_idx).intersection(set(val_idx))) == 0
     assert len(set(val_idx).intersection(set(test_idx))) == 0
     assert len(train_idx) + len(val_idx) + len(test_idx) == num_mols
-
-    # train_dataset = torch.tensor(dataset.iloc[train_idx, 1].values, dtype=torch.float32)
-    # val_dataset = torch.tensor(dataset.iloc[val_idx, 1].values, dtype=torch.float32)
-    # test_dataset = torch.tensor(dataset.iloc[test_idx, 1].values, dtype=torch.float32)
 
     train_dataset = dataset.iloc[train_idx]
     val_dataset = dataset.iloc[val_idx]

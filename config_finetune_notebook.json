@@ -1,0 +1,26 @@
+{
+    "seed": 72,
+
+    "batch_size": 16,
+
+    "pooler": "cls", 
+
+    "lr": 1e-3,
+    "weight_decay": 0,
+
+    "n_epochs": 500,
+
+    "downstream_dataset": "./datasets/Eea.csv",
+    "k_fold": 5,
+    "pretrained_model_path": "./model/polycl.pth",
+    "best_model": "./model/best_finetune_model.pth",
+    "patience": 50,
+    "early_stopping_start_epoch": 50,
+    "dropout_ratio": 0.1,
+    "num_workers": 0,
+    "block_size": 512,
+    "hidden_size": 600,
+    "activation": "relu",
+    "trans_modelpath": "./model/Transpolymer/pretrain.pt"
+
+}
