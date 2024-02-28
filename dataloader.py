@@ -52,7 +52,7 @@ def token_drop(smiles, rate = 0.1):
     return "".join(new_tokens)
 
 class Construct_Dataset(Dataset):
-    def __init__(self, smiles, labels=None, mode = "original", tokenizer = AutoTokenizer.from_pretrained('./model/polyBERT')):
+    def __init__(self, smiles, labels=None, mode = "original", tokenizer = AutoTokenizer.from_pretrained('kuelumbus/polyBERT')):
         self.smiles = smiles
         self.tokenizer = tokenizer
         self.labels = labels
