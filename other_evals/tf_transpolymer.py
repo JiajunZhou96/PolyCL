@@ -35,7 +35,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-config = utils.get_config(path = './config_finetune_notebook.json', print_dict = False)
+config = utils.get_config(path = './config_tf_notebook.json', print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
