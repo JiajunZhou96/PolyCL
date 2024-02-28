@@ -1,4 +1,6 @@
+# a util for Transpolymer
 # adapted from Transpolymer https://github.com/ChangwenXu98/TransPolymer
+
 
 import json
 import os
