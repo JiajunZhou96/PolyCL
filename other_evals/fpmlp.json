@@ -8,7 +8,7 @@
 
     "n_epochs": 2000,
 
-    "downstream_dataset": "/rds/general/user/yy6222/home/DL/PolyCL_v0/datasets/Xc.csv",
+    "downstream_dataset": "./datasets/Xc.csv",
     "split": "K_fold",
     "k_fold": 5,
     "number_of_splits": 5,
