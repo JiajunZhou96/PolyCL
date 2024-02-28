@@ -164,7 +164,7 @@ def main(config):
     dataset[0] = dataset[0].apply(to_psmiles)
     train_dataset, test_dataset = kfold_split(dataset, k = config['k_fold'], seed = config['seed'])
 
-    tokenizer = AutoTokenizer.from_pretrained('./model/polyBERT')
+    tokenizer = AutoTokenizer.from_pretrained('kuelumbus/polyBERT')
     
     train_dataset_down = [Downstream_dataset(train_dataset[i], block_size = config['block_size'], tokenizer = tokenizer) for i in range(config['k_fold'])]
     test_dataset_down = [Downstream_dataset(test_dataset[i], block_size = config['block_size'], tokenizer = tokenizer) for i in range(config['k_fold'])]
@@ -178,8 +178,8 @@ def main(config):
         print('Fold %s/%s' % (fold_num + 1, config['k_fold']))
         logger.info(f"Starting Fold {fold_num + 1}/{config['k_fold']}")
         
-        model_config = polycl.set_dropout(AutoConfig.from_pretrained('./model/polyBERT'), dropout = False)
-        polyBERT = AutoModel.from_pretrained('./model/polyBERT', config = model_config)
+        model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = False)
+        polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
         for param in polyBERT.parameters():
             param.requires_grad = False
         PretrainedModel = polyBERT
