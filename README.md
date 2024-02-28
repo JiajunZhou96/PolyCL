@@ -1,6 +1,15 @@
 # PolyCL
 
 
+## Run the model
+1. Pretraining for PolyCL with key parameters summarized in ```config.json```.
+```
+train.py
+```
+2. Transfer Learning following the sample configurations described in ```config_tf_notebook.json```
+```
+transfer_learning.py
+```
 
 
 
