@@ -173,7 +173,7 @@ def main(config):
     dataset[0] = dataset[0].apply(to_psmiles)
     train_dataset, test_dataset = kfold_split(dataset, k = config['k_fold'], seed = config['seed'])
     
-    tokenizer = PolymerSmilesTokenizer.from_pretrained("./model/Transpolyer/roberta-base", max_len=config['block_size'])
+    tokenizer = PolymerSmilesTokenizer.from_pretrained("roberta-base", max_len=config['block_size'])
 
     train_dataset_down = [Downstream_dataset(train_dataset[i], block_size = config['block_size'], tokenizer = tokenizer) for i in range(config['k_fold'])]
     test_dataset_down = [Downstream_dataset(test_dataset[i], block_size = config['block_size'], tokenizer = tokenizer) for i in range(config['k_fold'])]
