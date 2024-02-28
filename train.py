@@ -41,8 +41,8 @@ dataloader1 = DataLoader(dataset1, batch_size=config["batch_size"], shuffle=Fals
 dataloader2 = DataLoader(dataset2, batch_size=config["batch_size"], shuffle=False, drop_last = True)
 
 
-model_config = polycl.set_dropout(AutoConfig.from_pretrained('./model/polyBERT'), dropout = config["model_dropout"])
-polyBERT = AutoModel.from_pretrained('./model/polyBERT', config = model_config)
+model_config = polycl.set_dropout(AutoConfig.from_pretrained('kuelumbus/polyBERT'), dropout = config["model_dropout"])
+polyBERT = AutoModel.from_pretrained('kuelumbus/polyBERT', config = model_config)
 model = polycl.polyCL(encoder= polyBERT, pooler = config["pooler"])
 
 if config["ckpt"]:
