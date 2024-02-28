@@ -22,7 +22,8 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torchmetrics import R2Score
 
-from PolymerSmilesTokenization import PolymerSmilesTokenizer
+#from PolymerSmilesTokenization import PolymerSmilesTokenizer
+from other_utils.PolymerSmilesTokenization import PolymerSmilesTokenizer
 
 import utils
 from utils import kfold_split
