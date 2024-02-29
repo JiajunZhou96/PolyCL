@@ -1,6 +1,8 @@
 # PolyCL
+This repository contains data and codes for PolyCL.
 
-<img src="cl_schematic.png">
+## Description
+![image](cl_schematic.png)
 
 ## Requirements<br />
 
