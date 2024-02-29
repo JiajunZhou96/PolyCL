@@ -1,6 +1,6 @@
 # PolyCL
 
-<img src="cl_schematic.png" width="500">
+<img src="cl_schematic.png">
 
 ## Requirements<br />
 
