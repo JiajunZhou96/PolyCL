@@ -19,24 +19,30 @@ $ pip install tqdm
 $ conda install -c conda-forge rdkit
 ```
 
-## Run the model<br />
-### 1. Pretraining for PolyCL with key parameters summarized in ```config.json```.
+## Run the model <br />
+### 1. Pretraining 
+Run with key parameters for the pretraining summarized in ```config.json```.
 ```
 train.py
 ```
-### 2. Transfer Learning with sample configurations described in ```config_tf_notebook.json```
+### 2. Transfer Learning 
+Run with sample configurations described in ```config_tf_notebook.json```
 ```
 transfer_learning.py
 ```
-## Benchmarking other models<br />
+## Benchmarking other models <br />
 Models available for benchmarking are stored in the ```./other_evals/``` directory.
 
 ### Pretrained Models
-- **polyBERT**<br />
-  Run ```tf_polybert.py```<br />
-- **Transpolymer**<br />
-  Put the folder of Transpolymer model "pretrain.pt" in the directory to be refered as ```"./model/Trasnpolymer/pretrain.pt"``` and run "```tf_transpolymer.py```<br /> 
+- #### polyBERT <br />
+  - Run ```tf_polybert.py ```
+- #### Transpolymer <br />
+  - Download the model folder of Transpolymer "pretrain.pt" from https://github.com/ChangwenXu98/TransPolymer/tree/master/ckpt <br />
+  - Put the folder to the directory ```"./model/Trasnpolymer/"``` to be referred to as ```"./model/Trasnpolymer/pretrain.pt"```
+  - Run "```tf_transpolymer.py```<br /> 
 
 ### Supervised Models
+- #### GNNs <br />
+  - Adjust 
 - ```gnn.py```, ```morgan_nn.py```, ```rf.py```, ```xgb.py```
 
