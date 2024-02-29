@@ -30,7 +30,7 @@ from rdkit.Chem import AllChem
 
 seed = 72
 utils.set_seed(seed)
-config = utils.get_config(path = './other_evals/fpmlp.json', print_dict = False)
+config = utils.get_config(path = './benchmark/fpmlp.json', print_dict = False)
 
 log_dir_path = "./logs/morgan_mlp/"
 if not os.path.exists(log_dir_path):
