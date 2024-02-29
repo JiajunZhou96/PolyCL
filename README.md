@@ -29,12 +29,13 @@ train.py
 transfer_learning.py
 ```
 ## Benchmarking other models<br />
+Models available for benchmarking are stored in the ```./other_evals/``` directory.
+
 ### Pretrained Models
-- **polyBERT**
-  ```tf_polybert.py```
-- **Transpolymer**
-  ```tf_transpolymer.py```<br />
-  It should be 
+- **polyBERT**<br />
+  Run ```tf_polybert.py```<br />
+- **Transpolymer**<br />
+  Put the folder of Transpolymer model "pretrain.pt" in the directory to be refered as ```"./model/Trasnpolymer/pretrain.pt"``` and run "```tf_transpolymer.py```<br /> 
 
 ### Supervised Models
 - ```gnn.py```, ```morgan_nn.py```, ```rf.py```, ```xgb.py```
