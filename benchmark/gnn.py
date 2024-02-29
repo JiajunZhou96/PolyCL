@@ -20,7 +20,7 @@ from gnn_utils import *
 import warnings
 warnings.filterwarnings("ignore")
 
-config = utils.get_config(path = './other_evals/config_graph.json', print_dict = False)
+config = utils.get_config(path = './benchmark/config_graph.json', print_dict = False)
 seed = 72
 utils.set_seed(seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
