@@ -13,7 +13,7 @@ from rdkit.Chem import AllChem
 
 import utils
 
-config = utils.get_config(path = './other_evals/config_graph.json', print_dict = False)
+config = utils.get_config(path = './benchmark/config_graph.json', print_dict = False)
 
 ATOM_LIST = list(range(0,config["num_atom_type"]))    # 0 to index [*]
 
