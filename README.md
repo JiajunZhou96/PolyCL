@@ -1,5 +1,7 @@
 # PolyCL
 
+<img src="figs/cl_schematic.png" width="500">
+
 ## Requirements<br />
 
 ```
@@ -31,7 +33,7 @@ Run with sample configurations described in ```config_tf_notebook.json```
 transfer_learning.py
 ```
 ## Benchmarking other models <br />
-Models available for benchmarking are stored in the ```./other_evals/``` directory.
+Models available for benchmarking are stored in the ```./benchmark/``` directory.
 
 ### Pretrained Models
 - #### polyBERT <br />
@@ -43,6 +45,10 @@ Models available for benchmarking are stored in the ```./other_evals/``` directo
 
 ### Supervised Models
 - #### GNNs <br />
-  - Adjust 
-- ```gnn.py```, ```morgan_nn.py```, ```rf.py```, ```xgb.py```
+  - Change "gnn_type" to "gcn" or "gin" in ```"config_graph.json"``` to use different types of GNNs.
+  - Run ```gnn.py```
+- #### ECFP Methods
+  - Run ```morgan_nn.py``` to use neural network
+  - Run ```rf.py``` to use random forest
+  - Run ```xgb.py``` to use XGBoost
 
