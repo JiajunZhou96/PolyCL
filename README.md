@@ -30,7 +30,7 @@ Run with key parameters for the pretraining summarized in ```config.json```.
 train.py
 ```
 ### 2. Transfer Learning 
-Run with sample configurations described in ```config_tf_notebook.json```
+Run with sample configurations described in ```config_tf_notebook.json```.
 ```
 transfer_learning.py
 ```
@@ -39,18 +39,18 @@ Models available for benchmarking are stored in the ```./benchmark/``` directory
 
 ### Pretrained Models
 - #### polyBERT <br />
-  - Run ```tf_polybert.py ```
+  - Run ```tf_polybert.py ``` and polyBERT model will be automatically downloaded from https://huggingface.co/kuelumbus/polyBERT .
 - #### Transpolymer <br />
-  - Download the model folder of Transpolymer "pretrain.pt" from https://github.com/ChangwenXu98/TransPolymer/tree/master/ckpt <br />
-  - Put the folder to the directory ```"./model/Trasnpolymer/"``` to be referred to as ```"./model/Trasnpolymer/pretrain.pt"```
-  - Run "```tf_transpolymer.py```<br /> 
+  - Download the model folder of Transpolymer "pretrain.pt" from https://github.com/ChangwenXu98/TransPolymer/tree/master/ckpt . <br />
+  - Put the folder to the directory ```"./model/Trasnpolymer/"``` to be referred to as ```"./model/Trasnpolymer/pretrain.pt"```.
+  - Run "```tf_transpolymer.py```.<br /> 
 
 ### Supervised Models
 - #### GNNs <br />
   - Change "gnn_type" to "gcn" or "gin" in ```"config_graph.json"``` to use different types of GNNs.
-  - Run ```gnn.py```
+  - Run ```gnn.py```.
 - #### ECFP Methods
-  - Run ```morgan_nn.py``` to use neural network
-  - Run ```rf.py``` to use random forest
-  - Run ```xgb.py``` to use XGBoost
+  - Run ```morgan_nn.py``` to use neural network.
+  - Run ```rf.py``` to use random forest.
+  - Run ```xgb.py``` to use XGBoost.
 
