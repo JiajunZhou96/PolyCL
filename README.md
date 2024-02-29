@@ -5,6 +5,7 @@ This repository contains data and codes for PolyCL.
 ![image](cl_schematic.png)
 
 ## Requirements<br />
+#### Model Essentials
 
 ```
 # create a new environment
@@ -22,8 +23,9 @@ $ pip install tensorboard
 $ pip install tqdm
 $ conda install -c conda-forge rdkit
 ```
+#### Extra Packages for Benchmarking
 
-## Run the model <br />
+## Run the Model <br />
 ### 1. Pretraining 
 Run with key parameters for the pretraining summarized in ```config.json```.
 ```
@@ -34,7 +36,7 @@ Run with sample configurations described in ```config_tf_notebook.json```.
 ```
 transfer_learning.py
 ```
-## Benchmarking other models <br />
+## Benchmarking Other Models <br />
 Models available for benchmarking are stored in the ```./benchmark/``` directory.
 
 ### Pretrained Models
