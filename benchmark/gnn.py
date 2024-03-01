@@ -16,7 +16,7 @@ from utils import kfold_split
 import dataloader
 from dataloader import Downstream_dataset
 
-from gnn_utils import *
+from benchmark.gnn_utils import *
 import warnings
 warnings.filterwarnings("ignore")
 
