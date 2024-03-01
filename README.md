@@ -24,6 +24,7 @@ $ pip install tqdm
 $ conda install -c conda-forge rdkit
 ```
 #### Extra Packages for Benchmarking
+pip install torch-geometric==1.7.2 torch-sparse==0.6.18 torch-scatter==2.1.2 -f https://pytorch-geometric.com/whl/torch-1.12.0+cu113.html
 
 ## Run the Model <br />
 ### 1. Pretraining 
