@@ -1,6 +1,4 @@
 import os
-os.chdir(os.pardir) # to the parent dir
-
 import numpy as np
 import torch
 import torch.nn as nn
