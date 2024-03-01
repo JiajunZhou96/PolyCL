@@ -52,7 +52,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 log_dir_path = './logs/polybert/'
 if not os.path.exists(log_dir_path):
     os.makedirs(log_dir_path)
-log_filename = os.path.join(log_dir_path, f"polybert_{os.path.splitext(os.path.basename(config['downstream_dataset']))[0]}_{config['activation']}_lr_{config['lr']}_{config['batch_size']}_nepochs_{config['n_epochs']}_dropout_{config['dropout_ratio']}_{config['split']}_{config['k_fold']}_hidden_{config['hidden_size']}_decay_{config['weight_decay']}.log")
+log_filename = os.path.join(log_dir_path, f"polybert_{os.path.splitext(os.path.basename(config['downstream_dataset']))[0]}_{config['activation']}_lr_{config['lr']}_{config['batch_size']}_nepochs_{config['n_epochs']}_dropout_{config['dropout_ratio']}_{config['k_fold']}_hidden_{config['hidden_size']}_decay_{config['weight_decay']}.log")
 logging.basicConfig(filename=log_filename, level=logging.INFO, filemode = 'w', format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
