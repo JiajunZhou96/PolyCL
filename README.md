@@ -27,6 +27,12 @@ $ conda install -c conda-forge rdkit
 ```
 pip install torch-geometric==1.7.2 torch-sparse==0.6.18 torch-scatter==2.1.2 -f https://pytorch-geometric.com/whl/torch-1.12.0+cu113.html
 ```
+
+## Easy Usage of PolyCL as a Polymer Feature Extractor
+- Dependency: You will need only ```polycl.py``` in this repository and ```torch```,```transformers``` packages as the minimum requirement.
+- Obtain the polymer embedding: Simply follow the demonstration in ```PolyCL_Easy_Usage.ipynb```.
+
+
 ## Run the Model <br />
 ### 1. Pretraining 
 Run with key parameters for the pretraining summarized in ```config.json```.
