@@ -53,11 +53,11 @@ Models available for benchmarking are stored in the ```./benchmark/``` directory
 - #### Transpolymer <br />
   - Download the model folder of Transpolymer "pretrain.pt" from https://github.com/ChangwenXu98/TransPolymer/tree/master/ckpt . <br />
   - Put the folder to the directory ```"./model/Trasnpolymer/"``` to be referred to as ```"./model/Trasnpolymer/pretrain.pt"```.
-  - Run "```tf_transpolymer.py```.<br /> 
+  - Run ```tf_transpolymer.py```.<br /> 
 
 ### Supervised Models
 - #### GNNs <br />
-  - Change "gnn_type" to "gcn" or "gin" in ```"config_graph.json"``` to use different types of GNNs.
+  - Assign "gcn" or "gin" to the key "gnn_type" in ```config_graph.json``` to use different types of GNNs.
   - Run ```gnn.py```.
 - #### ECFP Methods
   - Run ```morgan_nn.py``` to use neural network.
