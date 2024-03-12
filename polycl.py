@@ -199,6 +199,7 @@ class Downstream_regression(nn.Module):
 
         self.regressor = nn.Sequential(
             nn.Linear(self.PretrainedModel.config.hidden_size, 256),
+            nn.LayerNorm(hidden_size),
             activation_func,
             nn.Dropout(drop_ratio),
             nn.Linear(256, 1)
