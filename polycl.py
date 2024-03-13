@@ -189,25 +189,3 @@ class polycl_pred(torch.nn.Module):
         regression = self.regressor(rep)
 
         return regression
-
-# For TransPolymer downstream evaluation
-class Downstream_regression(nn.Module):
-    def __init__(self, PretrainedModel, drop_ratio = 0, activation_func = nn.ReLU(inplace = True)):
-        super(Downstream_regression, self).__init__()
-
-        self.PretrainedModel = deepcopy(PretrainedModel)
-
-        self.regressor = nn.Sequential(
-            nn.Linear(self.PretrainedModel.config.hidden_size, 256),
-            nn.LayerNorm(hidden_size),
-            activation_func,
-            nn.Dropout(drop_ratio),
-            nn.Linear(256, 1)
-        )
-
-    def forward(self, input_ids, attention_mask):
-        outputs = self.PretrainedModel(input_ids = input_ids, attention_mask = attention_mask)
-        logits = outputs.last_hidden_state[:, 0, :]
-        output = self.regressor(logits)
-
-        return output
