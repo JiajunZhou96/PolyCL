@@ -46,6 +46,9 @@ class polyCL(nn.Module):
         
         return rep, out
 
+    def from_pretrained(self, model_file):
+        self.load_state_dict(torch.load(model_file, map_location = 'cpu'))
+
     def save_model(self, path = None):
         
         if isinstance(self, nn.DataParallel):
