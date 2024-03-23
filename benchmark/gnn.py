@@ -8,7 +8,7 @@ os.chdir(os.pardir) # to the parent dir
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch_geometric.data import Data, Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader
 from torchmetrics import R2Score
 
 import utils
