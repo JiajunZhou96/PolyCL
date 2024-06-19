@@ -9,6 +9,19 @@ This repository contains data and codes for PolyCL.
 - Obtain the polymer embedding: Simply follow the demonstration in ```PolyCL_Easy_Usage.ipynb```.
 
 ## Requirements<br />
+#### Clone the Repository
+
+You might need to configure git lfs first and download from https://git-lfs.com/ .
+Then install git lfs using:
+```
+$ git lfs install
+```
+
+After git lfs properly configured:
+```
+$ git clone https://github.com/JiajunZhou96/PolyCL.git
+```
+
 #### Model Essentials
 
 ```
