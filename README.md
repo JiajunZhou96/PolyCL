@@ -11,7 +11,7 @@ This repository contains data and codes for PolyCL.
 ## Requirements<br />
 #### Clone the Repository
 
-You might need to configure git lfs first and download from https://git-lfs.com/ .
+You might need to configure git lfs first and download git lfs following instructions on https://git-lfs.com/ .
 Then install git lfs using:
 ```
 $ git lfs install
