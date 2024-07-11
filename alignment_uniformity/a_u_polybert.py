@@ -30,7 +30,7 @@ config = utils.get_config(print_dict = False)
 seed = config["seed"]
 utils.set_seed(seed)
 
-test_data = utils.read_txt("/home/rengp/projects/JZ/PolyCL/datasets/60k_random_dev.txt")
+test_data = utils.read_txt("./datasets/60k_random_dev.txt")
 test_data1 = deepcopy(test_data)
 test_data2 = deepcopy(test_data)
 dataset1 = dataloader.Construct_Dataset(smiles = test_data1, mode = "original")
