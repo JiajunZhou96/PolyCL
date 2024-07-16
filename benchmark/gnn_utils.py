@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch_geometric
-from torch_geometric.data import Data, Dataset
+from torch_geometric.data import Data, Dataset, DataLoader
 
 import rdkit
 from rdkit import Chem
